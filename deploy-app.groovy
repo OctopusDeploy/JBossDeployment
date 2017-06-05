@@ -8,10 +8,8 @@ import org.jboss.as.cli.scriptsupport.*
 @Grab(group='org.springframework.retry', module='spring-retry', version='1.2.0.RELEASE')
 import org.springframework.retry.*
 import org.springframework.retry.support.*
+import org.springframework.retry.backoff.*
 import org.springframework.retry.policy.*
-
-@Grab(group='commons-io', module='commons-io', version='2.5')
-import org.apache.commons.io.*
 
 final DEFAULT_HOST = "localhost"
 final DEFAULT_PORT = 9990
@@ -26,7 +24,7 @@ cli.with {
     p longOpt: 'password', args: 1, argName: 'password', 'WildFly management password'
     a longOpt: 'application', args: 1, argName: 'path to artifact', 'Application to be deployed'
     n longOpt: 'name', args: 1, argName: 'application name', 'Application name'
-    e longOpt: 'enabled', 'Enable the application'
+    e longOpt: 'disabled', 'Disable the application'
 }
 
 def options = cli.parse(args)
@@ -46,8 +44,12 @@ cli = CLI.newInstance()
    Build up a retry template
  */
 def retryTemplate = new RetryTemplate()
-def retryPolicy = new SimpleRetryPolicy()
+def retryPolicy = new SimpleRetryPolicy(5)
 retryTemplate.setRetryPolicy(retryPolicy)
+
+def backOffPolicy = new ExponentialBackOffPolicy()
+backOffPolicy.setInitialInterval(1000L)
+retryTemplate.setBackOffPolicy(backOffPolicy)
 
 /*
     Connect to the server
@@ -64,31 +66,23 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
     }
 })
 
-def appName = options.name ?: FilenameUtils.getName(options.application)
-
-/*
-    Find out if the app is already uploaded
- */
-def appExists = retryTemplate.execute(new RetryCallback<Boolean, Exception>() {
-    @Override
-    Boolean doWithRetry(RetryContext context) throws Exception {
-        return cli.cmd("/deployment=${appName}:read-resource()").success
-    }
-})
-
 /*
     Upload the package
  */
-def disabled = options.enabled?:true ? "" : "--disabled"
+def disabled = (options.disabled ?: false) ? "--disabled" : ""
 def name = options.name ? "--name=${options.name}" : ""
 
 if (cli.getCommandContext().isDomainMode()) {
 
-} else {
-    def appUploadResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            return cli.cmd("deploy --force ${disabled} ${name} ${options.application}")
-        }
-    })
 }
+
+retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    @Override
+    CLI.Result doWithRetry(RetryContext context) throws Exception {
+        def result = cli.cmd("deploy --force ${disabled} ${name} ${options.application}")
+        if (!result.success) {
+            throw new Exception("Failed to upload package")
+        }
+        return result
+    }
+})

@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<jboss-cli xmlns="urn:jboss:cli:3.0">
+    <connection-timeout>30000</connection-timeout>
+</jboss-cli>
