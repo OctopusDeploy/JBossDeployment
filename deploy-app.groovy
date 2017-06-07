@@ -99,6 +99,8 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         and disabled. If this server group is not listed already in either the
         enabled-server-group or disabled-server-group options, it is added to the
         additionalDisabledServerGroups variable.
+
+        See https://issues.jboss.org/browse/WFLY-8909 for details.
      */
     def serverGroupResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
