@@ -270,4 +270,9 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
 println("All done")
 
+/*
+    Exiting like this can have consequences if the code is run from a Java app. But
+    for an Octopus Deploy script it is ok, and is actually necessary to properly exit
+    the script.
+ */
 System.exit(0)
