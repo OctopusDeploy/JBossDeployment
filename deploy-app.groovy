@@ -107,7 +107,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
             def result = jbossCli.cmd("/server-group=*:read-resource")
             if (!result.success) {
-                throw new Exception("Failed to upload package")
+                throw new Exception("Failed to upload package. ${result.response.toString()}")
             }
             return result
         }
@@ -216,7 +216,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
                 def result = jbossCli.cmd("/server-group=${it}/deployment=${packageName}:deploy")
                 if (!result.success) {
-                    throw new Exception("Failed to deploy package")
+                    throw new Exception("Failed to deploy package. ${result.response.toString()}")
                 }
                 return result
             }
@@ -238,7 +238,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
                 def result = jbossCli.cmd("/server-group=${it}/deployment=${packageName}:undeploy")
                 if (!result.success) {
-                    throw new Exception("Failed to deploy package")
+                    throw new Exception("Failed to deploy package. ${result.response.toString()}")
                 }
                 return result
             }
@@ -261,7 +261,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
             def result = jbossCli.cmd("deploy ${disabled} ${name} ${options.application}")
             if (!result.success) {
-                throw new Exception("Failed to upload package")
+                throw new Exception("Failed to upload package. ${result.response.toString()}")
             }
             return result
         }
