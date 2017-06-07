@@ -16,6 +16,10 @@ import org.apache.commons.io.*
 
 @Grab(group='com.google.guava', module='guava', version='22.0')
 import com.google.common.base.Splitter
+import com.google.common.collect.ImmutableList
+
+@Grab(group='org.apache.commons', module='commons-collections4', version='4.0')
+import org.apache.commons.collections4.CollectionUtils
 
 final DEFAULT_HOST = "localhost"
 final DEFAULT_PORT = 9990
@@ -31,7 +35,8 @@ cli.with {
     a longOpt: 'application', args: 1, argName: 'path to artifact', 'Application to be deployed'
     n longOpt: 'name', args: 1, argName: 'application name', 'Application name'
     e longOpt: 'disabled', 'Disable the application'
-    s longOpt: 'serverGroup', args: 1, argName: 'server group', 'Server group to deploy to'
+    s longOpt: 'enabledServerGroup', args: 1, argName: 'server group', 'Server group to enable in'
+    x longOpt: 'disabledServerGroup', args: 1, argName: 'server group', 'Server group to disable in'
 }
 
 def options = cli.parse(args)
@@ -85,6 +90,41 @@ def name = options.name ? "--name=${options.name}" : "--name=${packageName}"
 if (jbossCli.getCommandContext().isDomainMode()) {
 
     /*
+        If you push a new deployment, and that deployment is assigned but disabled
+        in a server group, then it can end up enabled after the push.
+
+        Here we get all the server groups and find out where the deployment is assigned
+        and disabled. If this server group is not listed already in either the
+        enabledServerGroup or disabledServerGroup options, it is added to the disabledServerGroup
+        option.
+     */
+    def serverGroups = []
+
+    def serverGroupResult = jbossCli.cmd("/server-group=*:read-resource")
+    serverGroupResult.response.get("result").asList().forEach {
+        it.get("address").asList().forEach {
+            serverGroups.add(it.get("server-group").asString())
+        }
+    }
+
+    def suppliedServerGroups = ImmutableList.copyOf(Splitter.on(',')
+            .trimResults()
+            .omitEmptyStrings()
+            .split(options.enabledServerGroup ?: "" + "," + options.disabledServerGroup ?: ""))
+
+    def missing = CollectionUtils.subtract(serverGroups, suppliedServerGroups)
+    missing.forEach {
+        def readResourceResult = jbossCli.cmd("/server-group=${it}/deployment=${packageName}:read-resource")
+        if (readResourceResult.success) {
+            if (!readResourceResult.response.get("result").get("enabled").asBoolean()) {
+                options.disabledServerGroup = options.disabledServerGroup ?
+                        options.disabledServerGroup + "," + it :
+                        it
+            }
+        }
+    }
+
+    /*
         Upload the new content
      */
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
@@ -103,12 +143,12 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     /*
         If the deployment has instructions for a server group, complete them
      */
-    if (options.serverGroup) {
+    if (options.enabledServerGroup || options.disabledServerGroup) {
 
         Splitter.on(',')
                 .trimResults()
                 .omitEmptyStrings()
-                .split(options.serverGroup)
+                .split(options.enabledServerGroup ?: "" + "," + options.disabledServerGroup ?: "")
                 .each {
                     /*
                         Add the deployment to the server group in a disabled state
@@ -132,30 +172,57 @@ if (jbossCli.getCommandContext().isDomainMode()) {
                         }
                     })
 
-                    /*
-                        Enable or disable the deployment
-                     */
-                    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-                        @Override
-                        CLI.Result doWithRetry(RetryContext context) throws Exception {
-                            def action = options.disabled ? "undeploy" : "deploy"
-                            println("Attempt ${context.retryCount + 1} to ${action} package.")
-
-                            def result = jbossCli.cmd("/server-group=${it}/deployment=${packageName}:${action}")
-                            if (!result.success) {
-                                throw new Exception("Failed to deploy package")
-                            }
-                            return result
-                        }
-                    })
-
                 }
+
+        Splitter.on(',')
+                .trimResults()
+                .omitEmptyStrings()
+                .split(options.enabledServerGroup)
+                .each {
+            /*
+                Enable or disable the deployment
+            */
+            retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+                @Override
+                CLI.Result doWithRetry(RetryContext context) throws Exception {
+                    println("Attempt ${context.retryCount + 1} to deploy package.")
+
+                    def result = jbossCli.cmd("/server-group=${it}/deployment=deploy")
+                    if (!result.success) {
+                        throw new Exception("Failed to deploy package")
+                    }
+                    return result
+                }
+            })
+        }
+
+        Splitter.on(',')
+                .trimResults()
+                .omitEmptyStrings()
+                .split(options.disabledServerGroup)
+                .each {
+            /*
+                Enable or disable the deployment
+            */
+            retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+                @Override
+                CLI.Result doWithRetry(RetryContext context) throws Exception {
+                    println("Attempt ${context.retryCount + 1} to undeploy package.")
+
+                    def result = jbossCli.cmd("/server-group=${it}/deployment=undeploy")
+                    if (!result.success) {
+                        throw new Exception("Failed to deploy package")
+                    }
+                    return result
+                }
+            })
+        }
     }
 
 
 } else {
-    if (options.serverGroup) {
-        println("The serverGroups option is only valid when deploying to a domain")
+    if (options.enabledServerGroup || options.disabledServerGroup) {
+        println("The enabledServerGroup and disabledServerGroup options are only valid when deploying to a domain")
     }
 
     def disabled = (options.disabled ?: false) ? "--disabled" : ""

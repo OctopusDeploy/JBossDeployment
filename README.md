@@ -27,16 +27,11 @@ Redeploy to domain and server group while currently exists and assigned and enab
 Redeploy to domain and server group while currently exists and assigned and disabled *
 
 Deploy to domain and server group disabled while deployment does not exist *
-Redeploy to domain and server group disabled while currently exists and unassigned 8
+Redeploy to domain and server group disabled while currently exists and unassigned *
 Redeploy to domain and server group disabled while currently exists and assigned and enabled *
 Redeploy to domain and server group disabled while currently exists and assigned and disabled *
 
-Deploy to domain while deployment does not exist ?
-Redeploy to domain while currently exists and unassigned
-Redeploy to domain while currently exists and assigned and disabled
-Redeploy to domain while currently exists and assigned and enabled
-
-Deploy to domain disabled while deployment does not exist
-Redeploy to domain disabled while currently exists and unassigned
-Redeploy to domain disabled while currently exists and assigned and disabled
-Redeploy to domain disabled while currently exists and assigned and enabled
+Deploy to domain while deployment does not exist *
+Redeploy to domain while currently exists and unassigned *
+Redeploy to domain while currently exists and assigned and disabled x
+Redeploy to domain while currently exists and assigned and enabled *
