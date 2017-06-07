@@ -218,6 +218,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
                 if (!result.success) {
                     throw new Exception("Failed to deploy package. ${result.response.toString()}")
                 }
+                rintln("Deploy package ${packageName} from ${it} succeeded")
                 return result
             }
         })
@@ -240,6 +241,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
                 if (!result.success) {
                     throw new Exception("Failed to deploy package. ${result.response.toString()}")
                 }
+                println("Undeploy package ${packageName} from ${it} succeeded")
                 return result
             }
         })
@@ -263,6 +265,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             if (!result.success) {
                 throw new Exception("Failed to upload package. ${result.response.toString()}")
             }
+            println("Package upload succeeded")
             return result
         }
     })
