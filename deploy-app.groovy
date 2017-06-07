@@ -267,3 +267,5 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         }
     })
 }
+
+return
