@@ -218,7 +218,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
                 if (!result.success) {
                     throw new Exception("Failed to deploy package. ${result.response.toString()}")
                 }
-                rintln("Deploy package ${packageName} from ${it} succeeded")
+                println("Deploy package ${packageName} from ${it} succeeded")
                 return result
             }
         })
@@ -246,9 +246,6 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             }
         })
     }
-
-
-
 } else {
     if (options.'enabled-server-group' || options.'disabled-server-group') {
         println("The enabled-server-group and disabled-server-group options are only valid when deploying to a domain")
