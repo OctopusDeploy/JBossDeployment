@@ -17,6 +17,8 @@ with your Linux distribution.
 
 ## Tests
 
+These are the scenarios that the script has been tested against.
+
 ### Standalone
 * Deploy to standalone
 * Deploy to standalone disabled
@@ -29,12 +31,12 @@ with your Linux distribution.
 * Deploy to domain and server group while deployment does not exist
 * Redeploy to domain and server group while currently exists and unassigned
 * Redeploy to domain and server group while currently exists and assigned and enabled
-* Redeploy to domain and server group while currently exists and assigned and disabled *
+* Redeploy to domain and server group while currently exists and assigned and disabled
 
 * Deploy to domain and server group disabled while deployment does not exist
 * Redeploy to domain and server group disabled while currently exists and unassigned
-* Redeploy to domain and server group disabled while currently exists and assigned and enabled *
-* Redeploy to domain and server group disabled while currently exists and assigned and disabled *
+* Redeploy to domain and server group disabled while currently exists and assigned and enabled
+* Redeploy to domain and server group disabled while currently exists and assigned and disabled
 
 * Deploy to domain while deployment does not exist
 * Redeploy to domain while currently exists and unassigned
