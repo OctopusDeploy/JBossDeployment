@@ -159,7 +159,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
             def result = jbossCli.cmd("deploy --force ${name} ${options.application}")
             if (!result.success) {
-                throw new Exception("Failed to upload package")
+                throw new Exception("Failed to upload package. ${result.response.toString()}")
             }
             return result
         }
