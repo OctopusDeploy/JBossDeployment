@@ -264,7 +264,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to upload package.")
 
-            def result = jbossCli.cmd("deploy ${disabled} ${name} ${options.application}")
+            def result = jbossCli.cmd("deploy --force ${disabled} ${name} ${options.application}")
             if (!result.success) {
                 throw new Exception("Failed to upload package. ${result.response.toString()}")
             }
