@@ -97,8 +97,8 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
         Here we get all the server groups and find out where the deployment is assigned
         and disabled. If this server group is not listed already in either the
-        enabledServerGroup or disabledServerGroup options, it is added to the disabledServerGroup
-        option.
+        enabled-server-group or disabled-server-group options, it is added to the
+        additionalDisabledServerGroups variable.
      */
     def serverGroupResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
@@ -113,12 +113,18 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         }
     })
 
+    /*
+        Convert the DRM result into a flat list of server groups
+     */
     def serverGroups = serverGroupResult.response.get("result").asList().collect {
         it.get("address").asList().collect {
             it.get("server-group").asString()
         }
     }.flatten()
 
+    /*
+        Get a list of all the server groups that were supplied by the command line
+     */
     def suppliedServerGroups = ImmutableList.copyOf(Splitter.on(',')
             .trimResults()
             .omitEmptyStrings()
@@ -166,7 +172,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     })
 
     /*
-        If the deployment has instructions for a server group, complete them
+        If the deployment has instructions for a server group, add the package to them
      */
     Splitter.on(',')
             .trimResults()
@@ -201,14 +207,14 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
             }
 
+    /*
+        Enable or disable the deployment
+    */
     Splitter.on(',')
             .trimResults()
             .omitEmptyStrings()
             .split(options.'enabled-server-group' ?: '')
             .each {
-        /*
-            Enable or disable the deployment
-        */
         retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
             @Override
             CLI.Result doWithRetry(RetryContext context) throws Exception {
@@ -224,14 +230,14 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         })
     }
 
+    /*
+        Disable the deployment
+    */
     Splitter.on(',')
             .trimResults()
             .omitEmptyStrings()
             .split(additionalDisabledServerGroups + "," + (options.'disabled-server-group' ?: ''))
             .each {
-        /*
-            Enable or disable the deployment
-        */
         retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
             @Override
             CLI.Result doWithRetry(RetryContext context) throws Exception {
