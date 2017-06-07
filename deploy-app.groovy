@@ -72,7 +72,7 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
     @Override
     Void doWithRetry(RetryContext context) throws Exception {
 
-        println("Attempting to connect. Retry count: ${context.retryCount}")
+        println("Attempt ${context.retryCount + 1} to connect.")
 
         jbossCli.connect(
                 options.controller ?: DEFAULT_HOST,
