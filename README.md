@@ -40,5 +40,5 @@ These are the scenarios that the script has been tested against.
 
 * Deploy to domain while deployment does not exist
 * Redeploy to domain while currently exists and unassigned
-* Redeploy to domain while currently exists and assigned and disabled *
+* Redeploy to domain while currently exists and assigned and disabled
 * Redeploy to domain while currently exists and assigned and enabled
