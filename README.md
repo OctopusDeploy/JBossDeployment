@@ -21,17 +21,17 @@ Redeploy to standalone while currently disabled
 Redeploy to standalone disabled while currently disabled
 
 ### Domain Controller
-Deploy to domain and server group while deployment does not exist *
-Redeploy to domain and server group while currently exists and unassigned *
-Redeploy to domain and server group while currently exists and assigned and enabled *
+Deploy to domain and server group while deployment does not exist
+Redeploy to domain and server group while currently exists and unassigned
+Redeploy to domain and server group while currently exists and assigned and enabled
 Redeploy to domain and server group while currently exists and assigned and disabled *
 
-Deploy to domain and server group disabled while deployment does not exist *
-Redeploy to domain and server group disabled while currently exists and unassigned *
+Deploy to domain and server group disabled while deployment does not exist
+Redeploy to domain and server group disabled while currently exists and unassigned
 Redeploy to domain and server group disabled while currently exists and assigned and enabled *
 Redeploy to domain and server group disabled while currently exists and assigned and disabled *
 
-Deploy to domain while deployment does not exist *
-Redeploy to domain while currently exists and unassigned *
+Deploy to domain while deployment does not exist
+Redeploy to domain while currently exists and unassigned
 Redeploy to domain while currently exists and assigned and disabled *
-Redeploy to domain while currently exists and assigned and enabled *
+Redeploy to domain while currently exists and assigned and enabled
