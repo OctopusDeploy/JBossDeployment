@@ -269,3 +269,5 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 }
 
 println("All done")
+
+System.exit(0)
