@@ -262,7 +262,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempting to upload package. Retry count: ${context.retryCount}")
+            println("Attempt ${context.retryCount + 1} to upload package.")
 
             def result = jbossCli.cmd("deploy ${disabled} ${name} ${options.application}")
             if (!result.success) {
