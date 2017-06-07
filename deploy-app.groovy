@@ -149,7 +149,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
         if (readResourceResult.success) {
             if (!readResourceResult.response.get("result").get("enabled").asBoolean()) {
-                println "Adding ${value} to disabled-server-group options to prevent accidential enablement of the deployment"
+                println "Adding ${value} to the list of disabled deployments to prevent accidential enablement of the deployment after the content is updated"
                 sum += "," + value
             }
         }
