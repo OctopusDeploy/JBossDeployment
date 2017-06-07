@@ -268,4 +268,4 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     })
 }
 
-return
+println("All done")
