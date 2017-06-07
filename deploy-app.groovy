@@ -24,6 +24,9 @@ import org.apache.commons.collections4.CollectionUtils
 final DEFAULT_HOST = "localhost"
 final DEFAULT_PORT = 9990
 
+/*
+    Define and parse the command line arguments
+ */
 def cli = new CliBuilder()
 
 cli.with {
@@ -44,14 +47,10 @@ if (!options) {
     return
 }
 
-// Show usage text when -h or --help option is used.
 if (options.h) {
     cli.usage()
     return
 }
-
-
-def jbossCli = CLI.newInstance()
 
 /*
    Build up a retry template
@@ -67,6 +66,8 @@ retryTemplate.setBackOffPolicy(backOffPolicy)
 /*
     Connect to the server
  */
+def jbossCli = CLI.newInstance()
+
 retryTemplate.execute(new RetryCallback<Void, Exception>() {
     @Override
     Void doWithRetry(RetryContext context) throws Exception {
@@ -125,11 +126,14 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
     def missing = CollectionUtils.subtract(serverGroups, suppliedServerGroups)
 
+    /*
+        Find server groups where we need to disable the deployment again
+     */
     def additionalDisabledServerGroups = missing.inject("", { sum, value ->
         def readResourceResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
             @Override
             CLI.Result doWithRetry(RetryContext context) throws Exception {
-                println("Attempt ${context.retryCount + 1} to get deployment info.")
+                println("Attempt ${context.retryCount + 1} to get deployment info for ${value}.")
 
                 return jbossCli.cmd("/server-group=${value}/deployment=${packageName}:read-resource")
             }
@@ -137,7 +141,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
         if (readResourceResult.success) {
             if (!readResourceResult.response.get("result").get("enabled").asBoolean()) {
-                println "Adding ${value} to disabledServerGroup options to prevent accidential enablement of the deployment"
+                println "Adding ${value} to disabled-server-group options to prevent accidential enablement of the deployment"
                 sum += "," + value
             }
         }
@@ -168,9 +172,10 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             .trimResults()
             .omitEmptyStrings()
             .split(additionalDisabledServerGroups +
+                    "," +
                     (options.'enabled-server-group' ?: '') +
-                    "," + (
-                    options.'disabled-server-group' ?: ''))
+                    "," +
+                    (options.'disabled-server-group' ?: ''))
             .each {
                 /*
                     Add the deployment to the server group in a disabled state
@@ -178,15 +183,15 @@ if (jbossCli.getCommandContext().isDomainMode()) {
                 retryTemplate.execute(new RetryCallback<Void, Exception>() {
                     @Override
                     Void doWithRetry(RetryContext context) throws Exception {
-                        println("Attempt ${context.retryCount + 1} to look up existing package.")
+                        println("Attempt ${context.retryCount + 1} to look up existing package ${packageName} in ${it}.")
 
                         def readResourceResult = jbossCli.cmd("/server-group=${it}/deployment=${packageName}:read-resource")
                         if (!readResourceResult.success) {
-                            println("Attempt ${context.retryCount + 1} to add package.")
+                            println("Attempt ${context.retryCount + 1} to add package ${packageName} to ${it}.")
 
                             def result = jbossCli.cmd("/server-group=${it}/deployment=${packageName}:add")
                             if (!result.success) {
-                                throw new Exception("Failed to add package")
+                                throw new Exception("Failed to add ${packageName} to ${it}. ${result.response.toString()}")
                             }
                         }
 
@@ -207,9 +212,9 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
             @Override
             CLI.Result doWithRetry(RetryContext context) throws Exception {
-                println("Attempt ${context.retryCount + 1} to deploy package.")
+                println("Attempt ${context.retryCount + 1} to deploy package ${packageName} to ${it}.")
 
-                def result = jbossCli.cmd("/server-group=${it}/deployment=deploy")
+                def result = jbossCli.cmd("/server-group=${it}/deployment=${packageName}:deploy")
                 if (!result.success) {
                     throw new Exception("Failed to deploy package")
                 }
@@ -221,7 +226,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     Splitter.on(',')
             .trimResults()
             .omitEmptyStrings()
-            .split(options.'disabled-server-group' ?: '')
+            .split(additionalDisabledServerGroups + "," + (options.'disabled-server-group' ?: ''))
             .each {
         /*
             Enable or disable the deployment
@@ -229,9 +234,9 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
             @Override
             CLI.Result doWithRetry(RetryContext context) throws Exception {
-                println("Attempt ${context.retryCount + 1} to undeploy package.")
+                println("Attempt ${context.retryCount + 1} to undeploy package ${packageName} from ${it}.")
 
-                def result = jbossCli.cmd("/server-group=${it}/deployment=undeploy")
+                def result = jbossCli.cmd("/server-group=${it}/deployment=${packageName}:undeploy")
                 if (!result.success) {
                     throw new Exception("Failed to deploy package")
                 }
