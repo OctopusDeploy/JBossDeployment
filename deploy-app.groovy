@@ -116,7 +116,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     })
 
     /*
-        Convert the DRM result into a flat list of server groups
+        Convert the DMR result into a flat list of server groups
      */
     def serverGroups = serverGroupResult.response.get("result").asList().collect {
         it.get("address").asList().collect {
