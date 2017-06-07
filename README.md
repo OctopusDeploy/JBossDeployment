@@ -33,5 +33,5 @@ Redeploy to domain and server group disabled while currently exists and assigned
 
 Deploy to domain while deployment does not exist *
 Redeploy to domain while currently exists and unassigned *
-Redeploy to domain while currently exists and assigned and disabled x
+Redeploy to domain while currently exists and assigned and disabled *
 Redeploy to domain while currently exists and assigned and enabled *
