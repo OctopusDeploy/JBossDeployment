@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableList
 import org.apache.commons.collections4.CollectionUtils
 
 final DEFAULT_HOST = "localhost"
-final DEFAULT_PORT = 9990
+final DEFAULT_PORT = "9990"
 
 /*
     Define and parse the command line arguments
@@ -35,8 +35,8 @@ cli.with {
     d longOpt: 'port', args: 1, argName: 'port', type: Number.class, 'Wildfly management port'
     u longOpt: 'user', args: 1, argName: 'username', required: true, 'WildFly management username'
     p longOpt: 'password', args: 1, argName: 'password', required: true, 'WildFly management password'
-    a longOpt: 'key-file', args: 1, argName: 'path to artifact', required: true, 'Application to be deployed'
-    n longOpt: 'certificate-file', args: 1, argName: 'application name', 'Application name'
+    k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file'
+    q longOpt: 'keystore-password', args: 1, argName: 'application name', required: true, 'Keystore password'
     s longOpt: 'server-group', args: 1, argName: 'server group', 'Server group to enable in'
 }
 
@@ -74,7 +74,7 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
 
         jbossCli.connect(
                 options.controller ?: DEFAULT_HOST,
-                options.port ?: DEFAULT_PORT,
+                Integer.parseInt(options.port ?: DEFAULT_PORT),
                 options.user,
                 options.password.toCharArray())
         return null
@@ -91,10 +91,36 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
             def existsResult = jbossCli.cmd("/core-service=management/security-realm=ssl-realm:read-resource")
             if (!existsResult.success) {
-                def addResult = jbossCli.cmd("/core-service=management/security-realm=ssl-realm::add()")
+                def addResult = jbossCli.cmd("/core-service=management/security-realm=ssl-realm:add()")
                 if (!addResult.success) {
                     throw new Exception("Failed to create security realm. ${addResult.response.toString()}")
                 }
+            }
+        }
+    })
+
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to add server identity.")
+
+            def existsResult = jbossCli.cmd("/core-service=management/security-realm=ssl-realm/server-identity=ssl:read-resource")
+            if (existsResult.success) {
+                def removeResult = jbossCli.cmd("/core-service=management/security-realm=ssl-realm/server-identity=ssl:remove")
+                if (!removeResult.success) {
+                    throw new Exception("Failed to remove server identity. ${removeResult.response.toString()}")
+                }
+            }
+
+            def keystoreFile = options.'keystore-file'.replaceAll('\\\\', '\\\\\\\\').replaceAll('"', '\"')
+            def keystorePassword = options.'keystore-password'.replaceAll('\\\\', '\\\\\\\\').replaceAll('"', '\"')
+            def command = "/core-service=management/security-realm=ssl-realm/server-identity=ssl/:add(" +
+                    "keystore-relative-to=\"jboss.server.config.dir\", keystore-path=\"${keystoreFile}\", keystore-password=\"${keystorePassword}\")"
+            println command
+
+            def addResult = jbossCli.cmd(command)
+            if (!addResult.success) {
+                throw new Exception("Failed to create server identity. ${addResult.response.toString()}")
             }
         }
     })
@@ -108,5 +134,5 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 System.exit(0)
 
 ///core-service=management/security-realm=ssl-realm/:add()
-///core-service=management/security-realm=ssl-realm/server-identity=ssl/:add(certificate-key-file=C:\key.pem, certificate-file=C:\certificate.pem, keystore-password="Password01!")
+///core-service=management/security-realm=ssl-realm/server-identity=ssl/:add(certificate-key-file=C:\key.pem, keystore-path=C:\certificate.pem, keystore-password="Password01!")
 ///subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https, security-realm=ssl-realm)

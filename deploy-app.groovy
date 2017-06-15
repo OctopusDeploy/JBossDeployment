@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableList
 import org.apache.commons.collections4.CollectionUtils
 
 final DEFAULT_HOST = "localhost"
-final DEFAULT_PORT = 9990
+final DEFAULT_PORT = "9990"
 
 /*
     Define and parse the command line arguments
@@ -76,7 +76,7 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
 
         jbossCli.connect(
                 options.controller ?: DEFAULT_HOST,
-                options.port ?: DEFAULT_PORT,
+                Integer.parseInt(options.port ?: DEFAULT_PORT),
                 options.user,
                 options.password.toCharArray())
         return null
