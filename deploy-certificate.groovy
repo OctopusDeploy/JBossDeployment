@@ -158,7 +158,3 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     the script.
  */
 System.exit(0)
-
-///core-service=management/security-realm=ssl-realm/:add()
-///core-service=management/security-realm=ssl-realm/server-identity=ssl/:add(certificate-key-file=C:\key.pem, keystore-path=C:\certificate.pem, keystore-password="Password01!")
-///subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https, security-realm=ssl-realm)
