@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 import java.nio.file.Files
-import java.io.File
+import java.nio.file.StandardCopyOption
 
 @Grab(group='org.wildfly.core', module='wildfly-embedded', version='2.2.1.Final')
 @Grab(group='org.wildfly.security', module='wildfly-security-manager', version='1.1.2.Final')
@@ -115,11 +115,12 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
         def configDir = configResult.response
                 .get("result")
                 .get("system-properties")
-                .get("jboss.server.config.dir").toString()
+                .get("jboss.server.config.dir").asString()
 
         Files.copy(
                 new File(options.'keystore-file').toPath(),
-                new File(configDir + File.separator + FilenameUtils.getName(options.'keystore-file')).toPath())
+                new File(configDir + File.separator + FilenameUtils.getName(options.'keystore-file')).toPath(),
+                StandardCopyOption.REPLACE_EXISTING)
 
         return null
     }
