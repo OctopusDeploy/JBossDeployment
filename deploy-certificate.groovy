@@ -169,6 +169,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             def keystorePassword = options.'keystore-password'
                     .replaceAll('\\\\', '\\\\\\\\')
                     .replaceAll('"', '\"')
+            
             def command = "/core-service=management/security-realm=${OCTOPUS_SSL_REALM}/server-identity=ssl/:add(" +
                     "alias=\"octopus\", " +
                     "keystore-relative-to=\"jboss.server.config.dir\", " +
@@ -189,16 +190,22 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
             def existsResult = jbossCli.cmd("/subsystem=undertow/server=default-server/https-listener=https:read-resource")
             if (!existsResult.success) {
-                def realmResult = jbossCli.cmd("/subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https, security-realm=${OCTOPUS_SSL_REALM})")
+                def realmResult = jbossCli.cmd("/subsystem=undertow/server=default-server/https-listener=https/:add(" +
+                        "socket-binding=https, " +
+                        "security-realm=${OCTOPUS_SSL_REALM})")
                 if (!realmResult.success) {
                     throw new Exception("Failed to set the https realm. ${realmResult.response.toString()}")
                 }
             } else {
-                def bindingResult = jbossCli.cmd("/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=socket-binding, value=https)")
+                def bindingResult = jbossCli.cmd("/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(" +
+                        "name=socket-binding, " + "" +
+                        "value=https)")
                 if (!bindingResult.success) {
                     throw new Exception("Failed to set the socket binding. ${bindingResult.response.toString()}")
                 }
-                def realmResult = jbossCli.cmd("/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm, value=${OCTOPUS_SSL_REALM})")
+                def realmResult = jbossCli.cmd("/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(" +
+                        "name=security-realm, " +
+                        "value=${OCTOPUS_SSL_REALM})")
                 if (!realmResult.success) {
                     throw new Exception("Failed to set the security realm realm. ${realmResult.response.toString()}")
                 }
