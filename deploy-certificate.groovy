@@ -1,5 +1,6 @@
 #!/usr/bin/env groovy
 import java.nio.file.Files
+import java.io.File
 
 @Grab(group='org.wildfly.core', module='wildfly-embedded', version='2.2.1.Final')
 @Grab(group='org.wildfly.security', module='wildfly-security-manager', version='1.1.2.Final')
@@ -114,8 +115,10 @@ retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         def configDir = configResult.response.get("jboss.server.config.dir").toString()
 
         Files.copy(
-                options.'keystore-file',
-                configDir + File.separator + FilenameUtils.getName(options.'keystore-file'))
+                new File(options.'keystore-file').toPath(),
+                new File(configDir + File.separator + FilenameUtils.getName(options.'keystore-file')).toPath())
+
+        return null
     }
 })
 
