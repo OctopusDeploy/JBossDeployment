@@ -1,4 +1,6 @@
 #!/usr/bin/env groovy
+import java.nio.file.Files
+
 @Grab(group='org.wildfly.core', module='wildfly-embedded', version='2.2.1.Final')
 @Grab(group='org.wildfly.security', module='wildfly-security-manager', version='1.1.2.Final')
 @Grab(group='org.wildfly.core', module='wildfly-cli', version='3.0.0.Beta23')
