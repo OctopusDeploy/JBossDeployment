@@ -170,7 +170,10 @@ if (jbossCli.getCommandContext().isDomainMode()) {
                     .replaceAll('\\\\', '\\\\\\\\')
                     .replaceAll('"', '\"')
             def command = "/core-service=management/security-realm=${OCTOPUS_SSL_REALM}/server-identity=ssl/:add(" +
-                    "alias=octopus keystore-relative-to=\"jboss.server.config.dir\", keystore-path=\"${keystoreFile}\", keystore-password=\"${keystorePassword}\")"
+                    "alias=\"octopus\", " +
+                    "keystore-relative-to=\"jboss.server.config.dir\", " +
+                    "keystore-path=\"${keystoreFile}\", " +
+                    "keystore-password=\"${keystorePassword}\")"
 
             def addResult = jbossCli.cmd(command)
             if (!addResult.success) {
