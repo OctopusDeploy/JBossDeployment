@@ -84,6 +84,21 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
 })
 
 /*
+    Backup the configuration
+ */
+retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    @Override
+    CLI.Result doWithRetry(RetryContext context) throws Exception {
+        println("Attempt ${context.retryCount + 1} to snapshot the configuration.")
+
+        def snapshotResult = jbossCli.cmd("/:take-snapshot")
+        if (!snapshotResult.success) {
+            throw new Exception("Failed to snapshot the configuration. ${snapshotResult.response.toString()}")
+        }
+    }
+})
+
+/*
     Upload the package
  */
 def packageName = FilenameUtils.getName(options.application)

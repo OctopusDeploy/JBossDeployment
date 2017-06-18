@@ -1,5 +1,4 @@
 #!/usr/bin/env groovy
-
 @Grab(group='org.wildfly.core', module='wildfly-embedded', version='2.2.1.Final')
 @Grab(group='org.wildfly.security', module='wildfly-security-manager', version='1.1.2.Final')
 @Grab(group='org.wildfly.core', module='wildfly-cli', version='3.0.0.Beta23')
@@ -82,15 +81,46 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
     }
 })
 
+/*
+    Backup the configuration
+ */
+retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    @Override
+    CLI.Result doWithRetry(RetryContext context) throws Exception {
+        println("Attempt ${context.retryCount + 1} to snapshot the configuration.")
+
+        def snapshotResult = jbossCli.cmd("/:take-snapshot")
+        if (!snapshotResult.success) {
+            throw new Exception("Failed to snapshot the configuration. ${snapshotResult.response.toString()}")
+        }
+    }
+})
+
+/*
+    Find the configuration directory and copy the keystore into it
+ */
+retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    @Override
+    CLI.Result doWithRetry(RetryContext context) throws Exception {
+        println("Attempt ${context.retryCount + 1} to copy keystore to config dir.")
+
+        def configResult = jbossCli.cmd("/core-service=platform-mbean/type=runtime:read-attribute(name=system-properties):read-resource")
+        if (!configResult.success) {
+            throw new Exception("Failed to read configuration. ${configResult.response.toString()}")
+        }
+
+        def configDir = configResult.response.get("jboss.server.config.dir").toString()
+
+        Files.copy(
+                options.'keystore-file',
+                configDir + File.separator + FilenameUtils.getName(options.'keystore-file'))
+    }
+})
+
 if (jbossCli.getCommandContext().isDomainMode()) {
 
 } else {
     /*
-        TODO: Read /core-service=platform-mbean/type=runtime:read-attribute(name=system-properties) to get
-        the configuration directory.
-
-        Then copy the keystore file to the config dir.
-
         Also add certificate to admin interface.
 
         Check for missing private key.
@@ -124,8 +154,12 @@ if (jbossCli.getCommandContext().isDomainMode()) {
                 }
             }
 
-            def keystoreFile = options.'keystore-file'.replaceAll('\\\\', '\\\\\\\\').replaceAll('"', '\"')
-            def keystorePassword = options.'keystore-password'.replaceAll('\\\\', '\\\\\\\\').replaceAll('"', '\"')
+            def keystoreFile = FilenameUtils.getName(options.'keystore-file')
+                    .replaceAll('\\\\', '\\\\\\\\')
+                    .replaceAll('"', '\"')
+            def keystorePassword = options.'keystore-password'
+                    .replaceAll('\\\\', '\\\\\\\\')
+                    .replaceAll('"', '\"')
             def command = "/core-service=management/security-realm=${OCTOPUS_SSL_REALM}/server-identity=ssl/:add(" +
                     "alias=octopus keystore-relative-to=\"jboss.server.config.dir\", keystore-path=\"${keystoreFile}\", keystore-password=\"${keystorePassword}\")"
 
@@ -158,8 +192,6 @@ if (jbossCli.getCommandContext().isDomainMode()) {
                 }
 
             }
-
-
         }
     })
 }
