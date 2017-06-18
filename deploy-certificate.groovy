@@ -102,9 +102,9 @@ retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
 /*
     Find the configuration directory and copy the keystore into it
  */
-retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+retryTemplate.execute(new RetryCallback<Void, Exception>() {
     @Override
-    CLI.Result doWithRetry(RetryContext context) throws Exception {
+    Void doWithRetry(RetryContext context) throws Exception {
         println("Attempt ${context.retryCount + 1} to copy keystore to config dir.")
 
         def configResult = jbossCli.cmd("/core-service=platform-mbean/type=runtime:read-attribute(name=system-properties):read-resource")
@@ -112,7 +112,7 @@ retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
             throw new Exception("Failed to read configuration. ${configResult.response.toString()}")
         }
 
-        def configDir = configResult.response.get("jboss.server.config.dir").toString()
+        def configDir = configResult.response.get("result").get("jboss.server.config.dir").toString()
 
         Files.copy(
                 new File(options.'keystore-file').toPath(),
