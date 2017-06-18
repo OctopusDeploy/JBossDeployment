@@ -192,7 +192,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to add server identity.")
+            println("Attempt ${context.retryCount + 1} to change management socket binding.")
 
             def socketBindingResult = jbossCli.cmd("/core-service=management/management-interface=http-interface:add(socket-binding=management-https")
             if (socketBindingResult.success) {
