@@ -195,7 +195,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             println("Attempt ${context.retryCount + 1} to change management socket binding.")
 
             def socketBindingResult = jbossCli.cmd("/core-service=management/management-interface=http-interface:write-attribute(" +
-                    "name=socket-binding, " +
+                    "name=secure-socket-binding, " +
                     "value=management-https")
             if (!socketBindingResult.success) {
                 throw new Exception("Failed to change management socket binding. ${socketBindingResult.response.toString()}")
