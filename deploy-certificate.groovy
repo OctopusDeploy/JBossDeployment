@@ -112,7 +112,10 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
             throw new Exception("Failed to read configuration. ${configResult.response.toString()}")
         }
 
-        def configDir = configResult.response.get("result").get("jboss.server.config.dir").toString()
+        def configDir = configResult.response
+                .get("result")
+                .get("system-properties")
+                .get("jboss.server.config.dir").toString()
 
         Files.copy(
                 new File(options.'keystore-file').toPath(),
