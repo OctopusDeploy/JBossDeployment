@@ -26,6 +26,7 @@ import org.apache.commons.collections4.CollectionUtils
 final DEFAULT_HOST = "localhost"
 final DEFAULT_PORT = "9990"
 final OCTOPUS_SSL_REALM = "octopus-ssl-realm"
+final DEFAULT_PROTOCOL = "http+remote"
 
 /*
     Define and parse the command line arguments
@@ -36,6 +37,7 @@ cli.with {
     h longOpt: 'help', 'Show usage information'
     c longOpt: 'controller', args: 1, argName: 'controller', 'WildFly controller'
     d longOpt: 'port', args: 1, argName: 'port', type: Number.class, 'Wildfly management port'
+    e longOpt: 'protocol', args: 1, argName: 'protocol', 'Wildfly management protocol i.e. https+remote'
     u longOpt: 'user', args: 1, argName: 'username', required: true, 'WildFly management username'
     p longOpt: 'password', args: 1, argName: 'password', required: true, 'WildFly management password'
     k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file'
@@ -76,6 +78,7 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
         println("Attempt ${context.retryCount + 1} to connect.")
 
         jbossCli.connect(
+                options.protocol ?: DEFAULT_PROTOCOL,
                 options.controller ?: DEFAULT_HOST,
                 Integer.parseInt(options.port ?: DEFAULT_PORT),
                 options.user,
