@@ -43,6 +43,7 @@ cli.with {
     k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file'
     q longOpt: 'keystore-password', args: 1, argName: 'application name', required: true, 'Keystore password'
     s longOpt: 'server-group', args: 1, argName: 'server group', 'Server group to enable in'
+    m longOpt: 'management-interface', args: 1, argName: 'management interface', 'Apply certificate to the Management interface'
 }
 
 def options = cli.parse(args)
@@ -129,15 +130,10 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
     }
 })
 
-if (jbossCli.getCommandContext().isDomainMode()) {
-
-} else {
+if (options.'management-interface') {
     /*
-        Also add certificate to admin interface.
-
-        Check for missing private key.
+        Add the ssl realm if it doesn't exist
      */
-
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
@@ -191,7 +187,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
     /*
         Bind the management interface to the ssl port
-     */
+    */
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
@@ -205,6 +201,29 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             }
         }
     })
+
+    /*
+        Restart the server
+     */
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to restart server.")
+
+            def restartResult = jbossCli.cmd("/:shutdown(restart=true)")
+            if (!restartResult.success) {
+                throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
+            }
+        }
+    })
+} else if (jbossCli.getCommandContext().isDomainMode()) {
+
+} else {
+    /*
+        TODO: Validation checks
+        Check for missing private key.
+        Check for management https port bindings.
+     */
 
     /*
         Add the server identity to the web interface
@@ -242,6 +261,9 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         }
     })
 
+    /*
+        Bind the web interface to the ssl security realm
+     */
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
