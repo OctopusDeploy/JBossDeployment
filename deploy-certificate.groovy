@@ -150,6 +150,60 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         }
     })
 
+    /*
+        Add the server identity to the management interface
+     */
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to add server identity.")
+
+            def existsResult = jbossCli.cmd("/core-service=management/security-realm=ManagementRealm/server-identity=ssl:read-resource")
+            if (existsResult.success) {
+                def removeResult = jbossCli.cmd("/core-service=management/security-realm=ManagementRealm/server-identity=ssl:remove")
+                if (!removeResult.success) {
+                    throw new Exception("Failed to remove management server identity. ${removeResult.response.toString()}")
+                }
+            }
+
+            def keystoreFile = FilenameUtils.getName(options.'keystore-file')
+                    .replaceAll('\\\\', '\\\\\\\\')
+                    .replaceAll('"', '\"')
+            def keystorePassword = options.'keystore-password'
+                    .replaceAll('\\\\', '\\\\\\\\')
+                    .replaceAll('"', '\"')
+
+            def command = "/core-service=management/security-realm=ManagementRealm/server-identity=ssl/:add(" +
+                    "alias=\"octopus\", " +
+                    "keystore-relative-to=\"jboss.server.config.dir\", " +
+                    "keystore-path=\"${keystoreFile}\", " +
+                    "keystore-password=\"${keystorePassword}\")"
+
+            def addResult = jbossCli.cmd(command)
+            if (!addResult.success) {
+                throw new Exception("Failed to create management server identity. ${addResult.response.toString()}")
+            }
+        }
+    })
+
+    /*
+        Bind the management interface to the ssl port
+     */
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to add server identity.")
+
+            def socketBindingResult = jbossCli.cmd("/core-service=management/management-interface=http-interface:add(socket-binding=management-https")
+            if (socketBindingResult.success) {
+                throw new Exception("Failed to change management socket binding. ${socketBindingResult.response.toString()}")
+            }
+        }
+    })
+
+    /*
+        Add the server identity to the web interface
+     */
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
@@ -169,7 +223,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             def keystorePassword = options.'keystore-password'
                     .replaceAll('\\\\', '\\\\\\\\')
                     .replaceAll('"', '\"')
-            
+
             def command = "/core-service=management/security-realm=${OCTOPUS_SSL_REALM}/server-identity=ssl/:add(" +
                     "alias=\"octopus\", " +
                     "keystore-relative-to=\"jboss.server.config.dir\", " +
