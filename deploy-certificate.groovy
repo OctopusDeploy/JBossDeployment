@@ -44,6 +44,7 @@ cli.with {
     q longOpt: 'keystore-password', args: 1, argName: 'application name', required: true, 'Keystore password'
     m longOpt: 'management-interface', 'Apply certificate to the Management interface'
     n longOpt: 'management-port', args: 1, argName: 'port', type: Number.class, 'Wildfly management ssl port'
+    o longOpt: 'profiles', args: 1, argName: 'profiles', type: String.class, 'Profiles to add ssl to'
 }
 
 def options = cli.parse(args)
@@ -202,7 +203,7 @@ def addServerIdentity = { profile ->
                             "name=security-realm, " +
                             "value=${OCTOPUS_SSL_REALM})")
                     if (!realmResult.success) {
-                        throw new Exception("Failed to set the security realm realm for server ${it} in ${profileName}. ${realmResult.response.toString()}")
+                        throw new Exception("Failed to set the security realm for server ${it} in ${profileName}. ${realmResult.response.toString()}")
                     }
 
                 }
@@ -365,24 +366,32 @@ def getHosts = {
 }
 
 def getProfiles = {
-    def profileResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get profiles.")
+    if (options.profiles) {
+        return ImmutableList.copyOf(Splitter.on(',')
+                .trimResults()
+                .omitEmptyStrings()
+                .split(options.profiles))
+    } else {
 
-            def result = jbossCli.cmd("/profile=*:read-resource")
-            if (!result.success) {
-                throw new Exception("Failed to read profile information. ${result.response.toString()}")
+        def profileResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+            @Override
+            CLI.Result doWithRetry(RetryContext context) throws Exception {
+                println("Attempt ${context.retryCount + 1} to get profiles.")
+
+                def result = jbossCli.cmd("/profile=*:read-resource")
+                if (!result.success) {
+                    throw new Exception("Failed to read profile information. ${result.response.toString()}")
+                }
+                return result
             }
-            return result
+        })
+
+        def profiles = profileResult.response.get("result").asList().collect {
+            it.get("result").get("name").asString()
         }
-    })
 
-    def profiles = profileResult.response.get("result").asList().collect {
-        it.get("result").get("name").asString()
+        return profiles
     }
-
-    return profiles
 }
 
 retryTemplate.execute(new RetryCallback<Void, Exception>() {
