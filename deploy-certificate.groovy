@@ -142,37 +142,71 @@ def addSslToHost = { host ->
     addKeystoreToRealm(null, OCTOPUS_SSL_REALM)
 }
 
+def getUndertowServers = { profile ->
+    def profilePrefix = profile ? "/profile=${profile}" : ""
+    def profileName = profile ?: "NONE"
+
+    def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get undertow servers for ${profileName}.")
+
+            def result = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*")
+            if (!result.success) {
+                throw new Exception("Failed to read undertow servers for ${profileName}. ${result.response.toString()}")
+            }
+            return result
+        }
+    })
+
+    def servers = hostResult.response.get("result").asList().collect {
+        it.get("address").asPropertyList().findAll {
+            it.name.equals("server")
+        }.collect {
+            it.value.asString()
+        }
+    }
+
+    return servers
+}
+
 def addServerIdentity = { profile ->
     def profilePrefix = profile ? "/profile=${profile}" : ""
     def profileName = profile ?: "NONE"
 
+    def servers = getUndertowServers(profile)
+
+
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to set the https listener for ${profileName}.")
 
-            def existsResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*/https-listener=https:read-resource")
-            if (!existsResult.success) {
-                def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*/https-listener=https/:add(" +
-                        "socket-binding=https, " +
-                        "security-realm=${OCTOPUS_SSL_REALM})")
-                if (!realmResult.success) {
-                    throw new Exception("Failed to set the https realm for ${profileName}. ${realmResult.response.toString()}")
-                }
-            } else {
-                def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*/https-listener=https/:write-attribute(" +
-                        "name=socket-binding, " + "" +
-                        "value=https)")
-                if (!bindingResult.success) {
-                    throw new Exception("Failed to set the socket binding for ${profileName}. ${bindingResult.response.toString()}")
-                }
-                def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*/https-listener=https/:write-attribute(" +
-                        "name=security-realm, " +
-                        "value=${OCTOPUS_SSL_REALM})")
-                if (!realmResult.success) {
-                    throw new Exception("Failed to set the security realm realm for ${profileName}. ${realmResult.response.toString()}")
-                }
+            servers.forEach {
+                println("Attempt ${context.retryCount + 1} to set the https listener for server ${it} in ${profileName}.")
+                
+                def existsResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https:read-resource")
+                if (!existsResult.success) {
+                    def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:add(" +
+                            "socket-binding=https, " +
+                            "security-realm=${OCTOPUS_SSL_REALM})")
+                    if (!realmResult.success) {
+                        throw new Exception("Failed to set the https realm for ${profileName}. ${realmResult.response.toString()}")
+                    }
+                } else {
+                    def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*${it}/https-listener=https/:write-attribute(" +
+                            "name=socket-binding, " + "" +
+                            "value=https)")
+                    if (!bindingResult.success) {
+                        throw new Exception("Failed to set the socket binding for ${profileName}. ${bindingResult.response.toString()}")
+                    }
+                    def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:write-attribute(" +
+                            "name=security-realm, " +
+                            "value=${OCTOPUS_SSL_REALM})")
+                    if (!realmResult.success) {
+                        throw new Exception("Failed to set the security realm realm for server ${it} in ${profileName}. ${realmResult.response.toString()}")
+                    }
 
+                }
             }
         }
     })
