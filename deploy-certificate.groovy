@@ -245,7 +245,7 @@ def configureManagementDomain = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "NONE"
 
-    addKeystoreToRealm(host, getManagementRealm(host))
+
 
     /*
         Bind the management interface to the ssl port
@@ -256,17 +256,25 @@ def configureManagementDomain = { host ->
             println("Attempt ${context.retryCount + 1} to change management socket binding for ${hostName}.")
 
             /*
-                Domain configs set the secure socket directly
+                Slave instances may not have a http interface, so check first
              */
-            def socketExists = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:read-attribute(" +
-                    "name=secure-port")
+            def httpInterfaceResult = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:read-resource")
+            if (httpInterfaceResult.success) {
+                addKeystoreToRealm(host, getManagementRealm(host))
 
-            if (socketExists.success) {
-                def socketBindingResult = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:write-attribute(" +
-                        "name=secure-port, " +
-                        "value=${options.'management-port'}")
-                if (!socketBindingResult.success) {
-                    throw new Exception("Failed to change management socket binding for ${hostName}. ${socketBindingResult.response.toString()}")
+                /*
+                    Domain configs set the secure socket directly
+                 */
+                def socketExists = jbossCli.cmd("${hostPrefix}/core-service=managementcd :read-attribute(" +
+                        "name=secure-port")
+
+                if (socketExists.success) {
+                    def socketBindingResult = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:write-attribute(" +
+                            "name=secure-port, " +
+                            "value=${options.'management-port'}")
+                    if (!socketBindingResult.success) {
+                        throw new Exception("Failed to change management socket binding for ${hostName}. ${socketBindingResult.response.toString()}")
+                    }
                 }
             }
         }
