@@ -73,6 +73,7 @@ retryTemplate.setBackOffPolicy(backOffPolicy)
 
 def addSslToHost = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
+    def propertyName = host ? "jboss.domain.config.dir" : "jboss.server.config.dir"
     def hostName = host ?: "NONE"
 
     /*
@@ -118,7 +119,7 @@ def addSslToHost = { host ->
 
             def command = "${hostPrefix}/core-service=management/security-realm=${OCTOPUS_SSL_REALM}/server-identity=ssl/:add(" +
                     "alias=\"octopus\", " +
-                    "keystore-relative-to=\"jboss.server.config.dir\", " +
+                    "keystore-relative-to=\"${propertyName}\", " +
                     "keystore-path=\"${keystoreFile}\", " +
                     "keystore-password=\"${keystorePassword}\")"
 
