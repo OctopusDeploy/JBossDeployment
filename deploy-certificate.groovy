@@ -28,6 +28,49 @@ final DEFAULT_PORT = "9990"
 final OCTOPUS_SSL_REALM = "octopus-ssl-realm"
 final DEFAULT_PROTOCOL = "remote+http"
 
+/*
+    Define and parse the command line arguments
+ */
+def cli = new CliBuilder()
+
+cli.with {
+    h longOpt: 'help', 'Show usage information'
+    c longOpt: 'controller', args: 1, argName: 'controller', 'WildFly controller'
+    d longOpt: 'port', args: 1, argName: 'port', type: Number.class, 'Wildfly management port'
+    e longOpt: 'protocol', args: 1, argName: 'protocol', 'Wildfly management protocol i.e. remote+https'
+    u longOpt: 'user', args: 1, argName: 'username', required: true, 'WildFly management username'
+    p longOpt: 'password', args: 1, argName: 'password', required: true, 'WildFly management password'
+    k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file'
+    q longOpt: 'keystore-password', args: 1, argName: 'application name', required: true, 'Keystore password'
+    m longOpt: 'management-interface', 'Apply certificate to the Management interface'
+}
+
+def options = cli.parse(args)
+if (!options) {
+    return
+}
+
+if (options.h) {
+    cli.usage()
+    return
+}
+
+/*
+    Connect to the server
+ */
+def jbossCli = CLI.newInstance()
+
+/*
+   Build up a retry template
+ */
+def retryTemplate = new RetryTemplate()
+def retryPolicy = new SimpleRetryPolicy(5)
+retryTemplate.setRetryPolicy(retryPolicy)
+
+def backOffPolicy = new ExponentialBackOffPolicy()
+backOffPolicy.setInitialInterval(1000L)
+retryTemplate.setBackOffPolicy(backOffPolicy)
+
 def addSslToHost = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "NONE"
@@ -154,49 +197,6 @@ def copyKeystore = { host ->
         }
     })
 }
-
-/*
-    Define and parse the command line arguments
- */
-def cli = new CliBuilder()
-
-cli.with {
-    h longOpt: 'help', 'Show usage information'
-    c longOpt: 'controller', args: 1, argName: 'controller', 'WildFly controller'
-    d longOpt: 'port', args: 1, argName: 'port', type: Number.class, 'Wildfly management port'
-    e longOpt: 'protocol', args: 1, argName: 'protocol', 'Wildfly management protocol i.e. remote+https'
-    u longOpt: 'user', args: 1, argName: 'username', required: true, 'WildFly management username'
-    p longOpt: 'password', args: 1, argName: 'password', required: true, 'WildFly management password'
-    k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file'
-    q longOpt: 'keystore-password', args: 1, argName: 'application name', required: true, 'Keystore password'
-    m longOpt: 'management-interface', 'Apply certificate to the Management interface'
-}
-
-def options = cli.parse(args)
-if (!options) {
-    return
-}
-
-if (options.h) {
-    cli.usage()
-    return
-}
-
-/*
-   Build up a retry template
- */
-def retryTemplate = new RetryTemplate()
-def retryPolicy = new SimpleRetryPolicy(5)
-retryTemplate.setRetryPolicy(retryPolicy)
-
-def backOffPolicy = new ExponentialBackOffPolicy()
-backOffPolicy.setInitialInterval(1000L)
-retryTemplate.setBackOffPolicy(backOffPolicy)
-
-/*
-    Connect to the server
- */
-def jbossCli = CLI.newInstance()
 
 retryTemplate.execute(new RetryCallback<Void, Exception>() {
     @Override
