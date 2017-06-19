@@ -210,7 +210,7 @@ def validateSocketBinding = {
             } else {
                 def isManagementPort = result.response.get("result").asList().collect {
                     it.get("result").get("interface").asString()
-                }.contains("managament")
+                }.contains("management")
 
                 if (!isManagementPort) {
                     throw new Exception("management-https socket binding was not for the management interface. ${result.response.toString()}")
