@@ -140,7 +140,7 @@ def addSslToHost = { host ->
         }
     })
 
-    addKeystoreToRealm(null, OCTOPUS_SSL_REALM)
+    addKeystoreToRealm(host, OCTOPUS_SSL_REALM)
 }
 
 def getUndertowServers = { profile ->
