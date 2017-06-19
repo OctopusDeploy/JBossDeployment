@@ -373,7 +373,7 @@ def getHosts = {
         def invalid = CollectionUtils.subtract(suppliedHosts, hosts)
 
         if (!invalid.empty) {
-            throw new Exception("The hosts ${invalid} did not match any hosts in the domain")
+            throw new Exception("The hosts ${invalid} did not match any hosts ${hosts} in the domain")
         }
 
         return suppliedHosts
@@ -413,7 +413,7 @@ def getProfiles = {
         def invalid = CollectionUtils.subtract(suppliedProfiles, profiles)
 
         if (!invalid.empty) {
-            throw new Exception("The profiles ${invalid} did not match any profiles in the domain config")
+            throw new Exception("The profiles ${invalid} did not match any profiles ${profiles} in the domain config")
         }
 
         return suppliedProfiles
