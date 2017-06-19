@@ -178,7 +178,7 @@ def copyKeystore = { host ->
         Void doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to copy keystore to config dir for ${hostName}.")
 
-            def configResult = jbossCli.cmd("${hostPrefix}/core-service=platform-mbean/type=runtime:read-attribute(name=system-properties):read-resource")
+            def configResult = jbossCli.cmd("${hostPrefix}/core-service=platform-mbean/type=runtime:read-attribute(name=system-properties)")
             if (!configResult.success) {
                 throw new Exception("Failed to read configuration. ${configResult.response.toString()}")
             }
