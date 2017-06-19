@@ -356,7 +356,7 @@ if (options.'management-interface') {
     }
 
     profiles.forEach {
-        addServerIdentity(profiles)
+        addServerIdentity(it)
     }
 } else {
     /*
