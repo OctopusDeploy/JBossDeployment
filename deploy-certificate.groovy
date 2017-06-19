@@ -192,7 +192,7 @@ def addServerIdentity = { profile ->
                         throw new Exception("Failed to set the https realm for ${profileName}. ${realmResult.response.toString()}")
                     }
                 } else {
-                    def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*${it}/https-listener=https/:write-attribute(" +
+                    def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:write-attribute(" +
                             "name=socket-binding, " + "" +
                             "value=https)")
                     if (!bindingResult.success) {
