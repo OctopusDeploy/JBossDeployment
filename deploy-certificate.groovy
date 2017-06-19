@@ -207,6 +207,14 @@ def validateSocketBinding = {
             def result = jbossCli.cmd("/socket-binding-group=*/socket-binding=management-https:read-resource")
             if (!result.success) {
                 throw new Exception("Failed to validate socket binding. ${result.response.toString()}")
+            } else {
+                def isManagementPort = result.response.get("result").asList().collect {
+                    it.get("result").get("interface")
+                }.contains("managament")
+
+                if (!isManagementPort) {
+                    throw new Exception("management-https socket binding was not for the management interface. ${result.response.toString()}")
+                }
             }
             return result
         }
