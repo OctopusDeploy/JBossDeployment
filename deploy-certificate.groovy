@@ -151,7 +151,7 @@ def getUndertowServers = { profile ->
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to get undertow servers for ${profileName}.")
 
-            def result = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*")
+            def result = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*:read-resource")
             if (!result.success) {
                 throw new Exception("Failed to read undertow servers for ${profileName}. ${result.response.toString()}")
             }
@@ -176,14 +176,13 @@ def addServerIdentity = { profile ->
 
     def servers = getUndertowServers(profile)
 
-
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
 
             servers.forEach {
                 println("Attempt ${context.retryCount + 1} to set the https listener for server ${it} in ${profileName}.")
-                
+
                 def existsResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https:read-resource")
                 if (!existsResult.success) {
                     def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:add(" +
