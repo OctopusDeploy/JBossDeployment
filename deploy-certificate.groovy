@@ -392,8 +392,7 @@ def getProfiles = {
         def invalid = CollectionUtils.subtract(suppliedProfiles, profiles)
 
         if (!invalid.empty) {
-            println "The profiles ${invalid} did not match any profiles in the domain config"
-            return
+            throw new Exception("The profiles ${invalid} did not match any profiles in the domain config")
         }
 
         return suppliedProfiles
