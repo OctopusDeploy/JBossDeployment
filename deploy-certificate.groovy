@@ -397,9 +397,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         Check for management https port bindings.
      */
     if (options.'management-interface') {
-        hosts.forEach {
-            configureManagement(null)
-        }
+        configureManagement(null)
     } else {
         /*
             Configure the core-management subsystem
