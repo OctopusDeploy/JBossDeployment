@@ -165,7 +165,7 @@ def getUndertowServers = { profile ->
         }.collect {
             it.value.asString()
         }
-    }
+    }.flatten()
 
     return servers
 }
