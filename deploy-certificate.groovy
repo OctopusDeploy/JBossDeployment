@@ -168,6 +168,7 @@ def addServerIdentity = { profile ->
 
 def copyKeystore = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
+    def propertyName = host ? "jboss.domain.config.dir" : "jboss.server.config.dir"
     def hostName = host ?: "NONE"
 
     /*
@@ -185,7 +186,7 @@ def copyKeystore = { host ->
 
             def configDir = configResult.response
                     .get("result")
-                    .get("jboss.server.config.dir").asString()
+                    .get(propertyName).asString()
 
             Files.copy(
                     new File(options.'keystore-file').toPath(),
