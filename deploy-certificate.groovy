@@ -38,6 +38,7 @@ cli.with {
     c longOpt: 'controller', args: 1, argName: 'controller', 'WildFly controller'
     d longOpt: 'port', args: 1, argName: 'port', type: Number.class, 'Wildfly management port'
     e longOpt: 'protocol', args: 1, argName: 'protocol', 'Wildfly management protocol i.e. remote+https'
+    h longOpt: 'hosts', args: 1, argName: 'hosts', 'Hosts to add the SSL configuration to'
     u longOpt: 'user', args: 1, argName: 'username', required: true, 'WildFly management username'
     p longOpt: 'password', args: 1, argName: 'password', required: true, 'WildFly management password'
     k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file'
@@ -45,6 +46,7 @@ cli.with {
     m longOpt: 'management-interface', 'Apply certificate to the Management interface'
     n longOpt: 'management-port', args: 1, argName: 'port', type: Number.class, 'Wildfly management ssl port'
     o longOpt: 'profiles', args: 1, argName: 'profiles', type: String.class, 'Profiles to add ssl to'
+    p longOpt: 'no-profiles', 'Don\'t update any profiles'
 }
 
 def options = cli.parse(args)
@@ -362,10 +364,29 @@ def getHosts = {
         it.get("result").get("name").asString()
     }
 
+    if (options.hosts) {
+        def suppliedHosts = ImmutableList.copyOf(Splitter.on(',')
+                .trimResults()
+                .omitEmptyStrings()
+                .split(options.hosts))
+
+        def invalid = CollectionUtils.subtract(suppliedHosts, hosts)
+
+        if (!invalid.empty) {
+            throw new Exception("The hosts ${invalid} did not match any hosts in the domain")
+        }
+
+        return suppliedHosts
+    }
+
     return hosts
 }
 
 def getProfiles = {
+    if (options.'no-profiles') {
+        return []
+    }
+
     def profileResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
