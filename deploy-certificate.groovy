@@ -226,6 +226,24 @@ if (options.'management-interface') {
      */
 
     /*
+        Add the security realm
+     */
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to add security realm.")
+
+            def existsResult = jbossCli.cmd("/core-service=management/security-realm=${OCTOPUS_SSL_REALM}:read-resource")
+            if (!existsResult.success) {
+                def addRealm = jbossCli.cmd("/core-service=management/security-realm=${OCTOPUS_SSL_REALM}:add()")
+                if (!addRealm.success) {
+                    throw new Exception("Failed to add security realm. ${addRealm.response.toString()}")
+                }
+            }
+        }
+    })
+
+    /*
         Add the server identity to the web interface
      */
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
