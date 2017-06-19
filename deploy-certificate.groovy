@@ -151,22 +151,22 @@ def addServerIdentity = { profile ->
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to set the https listener for ${profileName}.")
 
-            def existsResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=default-server/https-listener=https:read-resource")
+            def existsResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*/https-listener=https:read-resource")
             if (!existsResult.success) {
-                def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=default-server/https-listener=https/:add(" +
+                def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*/https-listener=https/:add(" +
                         "socket-binding=https, " +
                         "security-realm=${OCTOPUS_SSL_REALM})")
                 if (!realmResult.success) {
                     throw new Exception("Failed to set the https realm for ${profileName}. ${realmResult.response.toString()}")
                 }
             } else {
-                def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(" +
+                def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*/https-listener=https/:write-attribute(" +
                         "name=socket-binding, " + "" +
                         "value=https)")
                 if (!bindingResult.success) {
                     throw new Exception("Failed to set the socket binding for ${profileName}. ${bindingResult.response.toString()}")
                 }
-                def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(" +
+                def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=*/https-listener=https/:write-attribute(" +
                         "name=security-realm, " +
                         "value=${OCTOPUS_SSL_REALM})")
                 if (!realmResult.success) {
