@@ -198,6 +198,26 @@ def copyKeystore = { host ->
     })
 }
 
+def restartServer = { host ->
+    def hostPrefix = host ? "/host=${host}" : ""
+    def hostName = host ?: "NONE"
+
+    /*
+        Restart the server
+     */
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
+
+            def restartResult = jbossCli.cmd("${hostPrefix}/:shutdown(restart=true)")
+            if (!restartResult.success) {
+                throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
+            }
+        }
+    })
+}
+
 retryTemplate.execute(new RetryCallback<Void, Exception>() {
     @Override
     Void doWithRetry(RetryContext context) throws Exception {
@@ -358,6 +378,11 @@ if (options.'management-interface') {
     profiles.forEach {
         addServerIdentity(it)
     }
+
+    hosts.forEach {
+        restartServer(it)
+    }
+
 } else {
     /*
         TODO: Validation checks
@@ -380,17 +405,7 @@ if (options.'management-interface') {
     /*
         Restart the server
      */
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to restart server.")
-
-            def restartResult = jbossCli.cmd("/:shutdown(restart=true)")
-            if (!restartResult.success) {
-                throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
-            }
-        }
-    })
+    restartServer(null)
 }
 
 /*
