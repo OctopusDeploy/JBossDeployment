@@ -198,11 +198,31 @@ def restartServer = { host ->
     })
 }
 
+def getManagementRealm = {host ->
+    def hostPrefix = host ? "/host=${host}" : ""
+    def hostName = host ?: "NONE"
+
+    def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get security realm for ${hostName}.")
+
+            def result = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:read-attribute(name=security-realm)")
+            if (!result.success) {
+                throw new Exception("Failed to read security realm information for ${hostName}. ${result.response.toString()}")
+            }
+            return result
+        }
+    })
+
+    return hostResult.response.get("result").asString()
+}
+
 def configureManagementDomain = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "NONE"
 
-    addKeystoreToRealm(host, "ManagementRealm")
+    addKeystoreToRealm(host, getManagementRealm(host))
 
     /*
         Bind the management interface to the ssl port
@@ -231,7 +251,7 @@ def configureManagementDomain = { host ->
 }
 
 def configureManagementStandalone = {
-    addKeystoreToRealm(null, "ManagementRealm")
+    addKeystoreToRealm(null, getManagementRealm(null))
 
     /*
         Bind the management interface to the ssl binding group
@@ -258,6 +278,7 @@ def configureManagementStandalone = {
         }
     })
 }
+
 
 def getHosts = {
     def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
