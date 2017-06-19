@@ -123,6 +123,38 @@ def addServerIdentity = { profile ->
     })
 }
 
+def copyKeystore = { host ->
+    def hostPrefix = host ? "/host=${host}" : ""
+    def hostName = host ?: "NONE"
+
+    /*
+        Find the configuration directory and copy the keystore into it
+     */
+    retryTemplate.execute(new RetryCallback<Void, Exception>() {
+        @Override
+        Void doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to copy keystore to config dir for ${hostName}.")
+
+            def configResult = jbossCli.cmd("${hostPrefix}/core-service=platform-mbean/type=runtime:read-attribute(name=system-properties):read-resource")
+            if (!configResult.success) {
+                throw new Exception("Failed to read configuration. ${configResult.response.toString()}")
+            }
+
+            def configDir = configResult.response
+                    .get("result")
+                    .get("system-properties")
+                    .get("jboss.server.config.dir").asString()
+
+            Files.copy(
+                    new File(options.'keystore-file').toPath(),
+                    new File(configDir + File.separator + FilenameUtils.getName(options.'keystore-file')).toPath(),
+                    StandardCopyOption.REPLACE_EXISTING)
+
+            return null
+        }
+    })
+}
+
 /*
     Define and parse the command line arguments
  */
@@ -194,33 +226,6 @@ retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         if (!snapshotResult.success) {
             throw new Exception("Failed to snapshot the configuration. ${snapshotResult.response.toString()}")
         }
-    }
-})
-
-/*
-    Find the configuration directory and copy the keystore into it
- */
-retryTemplate.execute(new RetryCallback<Void, Exception>() {
-    @Override
-    Void doWithRetry(RetryContext context) throws Exception {
-        println("Attempt ${context.retryCount + 1} to copy keystore to config dir.")
-
-        def configResult = jbossCli.cmd("/core-service=platform-mbean/type=runtime:read-attribute(name=system-properties):read-resource")
-        if (!configResult.success) {
-            throw new Exception("Failed to read configuration. ${configResult.response.toString()}")
-        }
-
-        def configDir = configResult.response
-                .get("result")
-                .get("system-properties")
-                .get("jboss.server.config.dir").asString()
-
-        Files.copy(
-                new File(options.'keystore-file').toPath(),
-                new File(configDir + File.separator + FilenameUtils.getName(options.'keystore-file')).toPath(),
-                StandardCopyOption.REPLACE_EXISTING)
-
-        return null
     }
 })
 
@@ -346,6 +351,7 @@ if (options.'management-interface') {
     }
 
     hosts.forEach {
+        copyKeystore(it)
         addSslToHost(it)
     }
 
@@ -358,6 +364,8 @@ if (options.'management-interface') {
         Check for missing private key.
         Check for management https port bindings.
      */
+
+    copyKeystore(null)
 
     /*
         Configure the core-management subsystem
