@@ -38,7 +38,6 @@ cli.with {
     c longOpt: 'controller', args: 1, argName: 'controller', 'WildFly controller'
     d longOpt: 'port', args: 1, argName: 'port', type: Number.class, 'Wildfly management port'
     e longOpt: 'protocol', args: 1, argName: 'protocol', 'Wildfly management protocol i.e. remote+https'
-    h longOpt: 'hosts', args: 1, argName: 'hosts', 'Hosts to add the SSL configuration to'
     u longOpt: 'user', args: 1, argName: 'username', required: true, 'WildFly management username'
     p longOpt: 'password', args: 1, argName: 'password', required: true, 'WildFly management password'
     k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file'
@@ -46,7 +45,8 @@ cli.with {
     m longOpt: 'management-interface', 'Apply certificate to the Management interface'
     n longOpt: 'management-port', args: 1, argName: 'port', type: Number.class, 'Wildfly management ssl port'
     o longOpt: 'profiles', args: 1, argName: 'profiles', type: String.class, 'Profiles to add ssl to'
-    p longOpt: 'no-profiles', 'Don\'t update any profiles'
+    q longOpt: 'hosts', args: 1, argName: 'hosts', 'Hosts to add the SSL configuration to'
+    r longOpt: 'no-profiles', 'Don\'t update any profiles'
 }
 
 def options = cli.parse(args)
