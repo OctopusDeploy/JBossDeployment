@@ -47,6 +47,7 @@ cli.with {
     o longOpt: 'profiles', args: 1, argName: 'profiles', type: String.class, 'Profiles to add ssl to'
     q longOpt: 'hosts', args: 1, argName: 'hosts', 'Hosts to add the SSL configuration to'
     r longOpt: 'no-profiles', 'Don\'t update any profiles'
+    s longOpt: 'no-hosts', 'Don\'t update any hosts'
 }
 
 def options = cli.parse(args)
@@ -347,6 +348,10 @@ def configureManagementStandalone = {
 
 
 def getHosts = {
+    if (options.'no-hosts') {
+        return []
+    }
+
     def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
