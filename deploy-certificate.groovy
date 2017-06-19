@@ -245,8 +245,6 @@ def configureManagementDomain = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "NONE"
 
-
-
     /*
         Bind the management interface to the ssl port
     */
@@ -415,11 +413,6 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     }
 
 } else {
-    /*
-        TODO: Validation checks
-        Check for missing private key.
-        Check for management https port bindings.
-     */
     if (options.'management-interface') {
         configureManagementStandalone()
     } else {
