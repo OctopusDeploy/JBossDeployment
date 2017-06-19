@@ -111,10 +111,10 @@ def addSslToHost = { host ->
 
             def keystoreFile = options.'keystore-file'
                     .replaceAll('\\\\', '\\\\\\\\')
-                    .replaceAll('"', '\"')
+                    .replaceAll('"', '\\\\"')
             def keystorePassword = options.'keystore-password'
                     .replaceAll('\\\\', '\\\\\\\\')
-                    .replaceAll('"', '\"')
+                    .replaceAll('"', '\\\\"')
 
             def command = "${hostPrefix}/core-service=management/security-realm=${OCTOPUS_SSL_REALM}/server-identity=ssl/:add(" +
                     "alias=\"octopus\", " +
