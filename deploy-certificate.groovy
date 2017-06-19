@@ -43,7 +43,7 @@ cli.with {
     k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file'
     q longOpt: 'keystore-password', args: 1, argName: 'application name', required: true, 'Keystore password'
     s longOpt: 'server-group', args: 1, argName: 'server group', 'Server group to enable in'
-    m longOpt: 'management-interface', args: 1, argName: 'management interface', 'Apply certificate to the Management interface'
+    m longOpt: 'management-interface', 'Apply certificate to the Management interface'
 }
 
 def options = cli.parse(args)
