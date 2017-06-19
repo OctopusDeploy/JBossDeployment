@@ -23,7 +23,7 @@ import org.apache.commons.collections4.CollectionUtils
 
 final DEFAULT_HOST = "localhost"
 final DEFAULT_PORT = "9990"
-final DEFAULT_PROTOCOL = "http+remote"
+final DEFAULT_PROTOCOL = "remote+http"
 
 /*
     Define and parse the command line arguments
