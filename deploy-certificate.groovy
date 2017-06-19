@@ -243,7 +243,7 @@ def configureManagement = { host ->
     })
 
     /*
-        Bind the management interface to the ssl port
+        Bind the management interface to the ssl binding group
     */
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
@@ -260,6 +260,31 @@ def configureManagement = { host ->
                 def socketBindingResult = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:write-attribute(" +
                         "name=secure-socket-binding, " +
                         "value=management-https")
+                if (!socketBindingResult.success) {
+                    throw new Exception("Failed to change management socket binding for ${host}. ${socketBindingResult.response.toString()}")
+                }
+            }
+        }
+    })
+
+    /*
+        Bind the management interface to the ssl port
+    */
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to change management socket binding for ${host}.")
+
+            /*
+                Domain configs set the secure socket directly
+             */
+            def socketExists = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:read-attribute(" +
+                    "name=secure-port")
+
+            if (socketExists.success) {
+                def socketBindingResult = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:write-attribute(" +
+                        "name=secure-port, " +
+                        "value=19993")
                 if (!socketBindingResult.success) {
                     throw new Exception("Failed to change management socket binding for ${host}. ${socketBindingResult.response.toString()}")
                 }
