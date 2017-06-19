@@ -109,7 +109,7 @@ def addSslToHost = { host ->
                 }
             }
 
-            def keystoreFile = FilenameUtils.getName(options.'keystore-file')
+            def keystoreFile = options.'keystore-file'
                     .replaceAll('\\\\', '\\\\\\\\')
                     .replaceAll('"', '\"')
             def keystorePassword = options.'keystore-password'
@@ -223,7 +223,7 @@ def configureManagement = { host ->
                 }
             }
 
-            def keystoreFile = FilenameUtils.getName(options.'keystore-file')
+            def keystoreFile = options.'keystore-file'
                     .replaceAll('\\\\', '\\\\\\\\')
                     .replaceAll('"', '\"')
             def keystorePassword = options.'keystore-password'
@@ -275,6 +275,48 @@ def configureManagement = { host ->
     })
 }
 
+def getHosts = {
+    def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get server groups.")
+
+            def result = jbossCli.cmd("/host=*:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to read host information. ${result.response.toString()}")
+            }
+            return result
+        }
+    })
+
+    def hosts = hostResult.response.get("result").asList().collect {
+        it.get("result").get("name").asString()
+    }
+
+    return hosts
+}
+
+def getProfiles = {
+    def profileResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get profiles.")
+
+            def result = jbossCli.cmd("/profile=*:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to read profile information. ${result.response.toString()}")
+            }
+            return result
+        }
+    })
+
+    def profiles = profileResult.response.get("result").asList().collect {
+        it.get("result").get("name").asString()
+    }
+
+    return profiles
+}
+
 retryTemplate.execute(new RetryCallback<Void, Exception>() {
     @Override
     Void doWithRetry(RetryContext context) throws Exception {
@@ -307,39 +349,10 @@ retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
 })
 
 if (jbossCli.getCommandContext().isDomainMode()) {
-    def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get server groups.")
 
-            def result = jbossCli.cmd("/host=*:read-resource")
-            if (!result.success) {
-                throw new Exception("Failed to read host information. ${result.response.toString()}")
-            }
-            return result
-        }
-    })
+    def hosts = getHosts()
 
-    def hosts = hostResult.response.get("result").asList().collect {
-        it.get("result").get("name").asString()
-    }
-
-    def profileResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get profiles.")
-
-            def result = jbossCli.cmd("/profile=*:read-resource")
-            if (!result.success) {
-                throw new Exception("Failed to read profile information. ${result.response.toString()}")
-            }
-            return result
-        }
-    })
-
-    def profiles = profileResult.response.get("result").asList().collect {
-        it.get("result").get("name").asString()
-    }
+    def profiles = getProfiles()
 
     if (options.'management-interface') {
         hosts.forEach {
