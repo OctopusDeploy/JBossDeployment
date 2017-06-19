@@ -209,7 +209,7 @@ def validateSocketBinding = {
                 throw new Exception("Failed to validate socket binding. ${result.response.toString()}")
             } else {
                 def isManagementPort = result.response.get("result").asList().collect {
-                    it.get("result").get("interface")
+                    it.get("result").get("interface").asString()
                 }.contains("managament")
 
                 if (!isManagementPort) {
