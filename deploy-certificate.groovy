@@ -248,13 +248,13 @@ def configureManagement = { host ->
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to change management socket binding.")
+            println("Attempt ${context.retryCount + 1} to change management socket binding for ${host}.")
 
-            def socketBindingResult = jbossCli.cmd("/core-service=management/management-interface=http-interface:write-attribute(" +
+            def socketBindingResult = jbossCli.cmd("${host}/core-service=management/management-interface=http-interface:write-attribute(" +
                     "name=secure-socket-binding, " +
                     "value=management-https")
             if (!socketBindingResult.success) {
-                throw new Exception("Failed to change management socket binding. ${socketBindingResult.response.toString()}")
+                throw new Exception("Failed to change management socket binding for ${host}. ${socketBindingResult.response.toString()}")
             }
         }
     })
