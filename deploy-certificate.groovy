@@ -185,7 +185,6 @@ def copyKeystore = { host ->
 
             def configDir = configResult.response
                     .get("result")
-                    .get("system-properties")
                     .get("jboss.server.config.dir").asString()
 
             Files.copy(
