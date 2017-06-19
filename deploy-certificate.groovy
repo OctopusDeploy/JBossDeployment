@@ -366,32 +366,40 @@ def getHosts = {
 }
 
 def getProfiles = {
+    def profileResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get profiles.")
+
+            def result = jbossCli.cmd("/profile=*:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to read profile information. ${result.response.toString()}")
+            }
+            return result
+        }
+    })
+
+    def profiles = profileResult.response.get("result").asList().collect {
+        it.get("result").get("name").asString()
+    }
+
     if (options.profiles) {
-        return ImmutableList.copyOf(Splitter.on(',')
+        def suppliedProfiles = ImmutableList.copyOf(Splitter.on(',')
                 .trimResults()
                 .omitEmptyStrings()
                 .split(options.profiles))
-    } else {
 
-        def profileResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-            @Override
-            CLI.Result doWithRetry(RetryContext context) throws Exception {
-                println("Attempt ${context.retryCount + 1} to get profiles.")
+        def invalid = CollectionUtils.subtract(suppliedProfiles, profiles)
 
-                def result = jbossCli.cmd("/profile=*:read-resource")
-                if (!result.success) {
-                    throw new Exception("Failed to read profile information. ${result.response.toString()}")
-                }
-                return result
-            }
-        })
-
-        def profiles = profileResult.response.get("result").asList().collect {
-            it.get("result").get("name").asString()
+        if (!invalid.empty) {
+            println "The profiles ${invalid} did not match any profiles in the domain config"
+            return
         }
 
-        return profiles
+        return suppliedProfiles
     }
+
+    return profiles
 }
 
 retryTemplate.execute(new RetryCallback<Void, Exception>() {
