@@ -227,7 +227,7 @@ def restartServer = { host ->
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
 
-            def restartResult = jbossCli.cmd("${hostPrefix}/:shutdown(restart=true)")
+            def restartResult = jbossCli.cmd("${hostPrefix}/:reload")
             if (!restartResult.success) {
                 throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
             }
