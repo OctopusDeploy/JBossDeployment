@@ -315,6 +315,7 @@ def configureManagementDomain = { host ->
                 }
             }
 
+            println "${hostName} has no http management interface, so skipping"
             return false
         }
     })
