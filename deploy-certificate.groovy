@@ -365,7 +365,7 @@ def getMasterHosts = {
         it.get("result").get("name").asString()
     }
 
-    println "Found master ${hosts.first()}"
+    println "Found domain master host \"${hosts.first()}\""
 
     return hosts.first()
 }
@@ -390,7 +390,7 @@ def getSlaveHosts = {
         it.get("result").get("name").asString()
     }
 
-    println "Found slaves ${hosts}"
+    println "Found domain slave hosts \"${hosts}\""
 
     return hosts
 }
