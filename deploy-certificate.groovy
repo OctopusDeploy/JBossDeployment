@@ -48,6 +48,7 @@ cli.with {
     q longOpt: 'hosts', args: 1, argName: 'hosts', 'Hosts to add the SSL configuration to'
     r longOpt: 'no-profiles', 'Don\'t update any profiles'
     s longOpt: 'no-hosts', 'Don\'t update any hosts'
+    t longOpt: 'no-restart', 'Don\'t restart any hosts'
 }
 
 def options = cli.parse(args)
@@ -187,6 +188,10 @@ def getUndertowServers = { profile ->
     Restarts a host
  */
 def restartServer = { host ->
+    if (options.'no-restart') {
+        return
+    }
+
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "Standalone"
 
