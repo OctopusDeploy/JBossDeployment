@@ -287,7 +287,7 @@ def getSocketBindingsForHost = { host ->
         it.get("result").get("name").asString()
     }
 
-    prinln "Found socket groups ${socketGroups} for host ${host}"
+    println "Found socket groups ${socketGroups} for host ${host}"
 
     return socketGroups
 }
