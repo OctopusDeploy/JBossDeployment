@@ -269,7 +269,7 @@ def validateManagementSocketBinding = {
     by the supplied host
  */
 def getSocketBindingsForHost = { host ->
-    return result = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    def result = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to get host socket groups for host ${host}.")
