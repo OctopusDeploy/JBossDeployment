@@ -525,10 +525,10 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         profiles.forEach {
             addServerIdentity(it)
         }
-    }
 
-    hosts.forEach {
-        restartDomainServer(it)
+        hosts.forEach {
+            restartDomainServer(it)
+        }
     }
 
 } else {
