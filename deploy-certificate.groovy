@@ -577,16 +577,14 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         restartServer(masterHost)
     } else {
         slaveHosts.forEach {
+            def serverGroups = getSocketBindingsForHost(it)
+            serverGroups.forEach {
+                validateSocketBinding(it)
+            }
             addSslToHost(it)
         }
 
         profiles.forEach {
-            slaveHosts.forEach {
-                def serverGroups = getSocketBindingsForHost(it)
-                serverGroups.forEach {
-                    validateSocketBinding(it)
-                }
-            }
             addServerIdentity(it)
         }
 
