@@ -346,6 +346,51 @@ def configureManagementStandalone = {
     })
 }
 
+def getMasterHosts = {
+    def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get server groups.")
+
+            def result = jbossCli.cmd("/host=*:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to read host information. ${result.response.toString()}")
+            }
+            return result
+        }
+    })
+
+    def hosts = hostResult.response.get("result").asList().findAll {
+        it.get("result").get("master").asBoolean()
+    }.collect {
+        it.get("result").get("name").asString()
+    }
+
+    return hosts.first()
+}
+
+def getSlaveHosts = {
+    def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get server groups.")
+
+            def result = jbossCli.cmd("/host=*:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to read host information. ${result.response.toString()}")
+            }
+            return result
+        }
+    })
+
+    def hosts = hostResult.response.get("result").asList().findAll {
+        !it.get("result").get("master").asBoolean()
+    }.collect {
+        it.get("result").get("name").asString()
+    }
+
+    return hosts
+}
 
 def getHosts = {
     if (options.'no-hosts') {
@@ -460,7 +505,8 @@ retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
 
 if (jbossCli.getCommandContext().isDomainMode()) {
 
-    def hosts = getHosts()
+    def slaveHosts = getSlaveHosts()
+    def masterHost = getMasterHosts()
 
     def profiles = getProfiles()
 
@@ -470,13 +516,13 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             return
         }
 
-        hosts.forEach {
-            if (configureManagementDomain(it)) {
-                restartServer(it)
-            }
-        }
+        /*
+            Find the first host to have a http management interface. This will be the domain controller
+         */
+        configureManagementDomain(masterHost)
+        restartServer(masterHost)
     } else {
-        hosts.forEach {
+        slaveHosts.forEach {
             addSslToHost(it)
         }
 
@@ -488,7 +534,6 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             restartServer(it)
         }
     }
-
 } else {
     if (options.'management-interface') {
         configureManagementStandalone()
