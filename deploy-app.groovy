@@ -22,7 +22,8 @@ import com.google.common.collect.ImmutableList
 import org.apache.commons.collections4.CollectionUtils
 
 final DEFAULT_HOST = "localhost"
-final DEFAULT_PORT = 9990
+final DEFAULT_PORT = "9990"
+final DEFAULT_PROTOCOL = "remote+http"
 
 /*
     Define and parse the command line arguments
@@ -33,6 +34,7 @@ cli.with {
     h longOpt: 'help', 'Show usage information'
     c longOpt: 'controller', args: 1, argName: 'controller', 'WildFly controller'
     d longOpt: 'port', args: 1, argName: 'port', type: Number.class, 'Wildfly management port'
+    e longOpt: 'protocol', args: 1, argName: 'protocol', 'Wildfly management protocol i.e. remote+https'
     u longOpt: 'user', args: 1, argName: 'username', required: true, 'WildFly management username'
     p longOpt: 'password', args: 1, argName: 'password', required: true, 'WildFly management password'
     a longOpt: 'application', args: 1, argName: 'path to artifact', required: true, 'Application to be deployed'
@@ -75,11 +77,27 @@ retryTemplate.execute(new RetryCallback<Void, Exception>() {
         println("Attempt ${context.retryCount + 1} to connect.")
 
         jbossCli.connect(
+                options.protocol ?: DEFAULT_PROTOCOL,
                 options.controller ?: DEFAULT_HOST,
-                options.port ?: DEFAULT_PORT,
+                Integer.parseInt(options.port ?: DEFAULT_PORT),
                 options.user,
                 options.password.toCharArray())
         return null
+    }
+})
+
+/*
+    Backup the configuration
+ */
+retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    @Override
+    CLI.Result doWithRetry(RetryContext context) throws Exception {
+        println("Attempt ${context.retryCount + 1} to snapshot the configuration.")
+
+        def snapshotResult = jbossCli.cmd("/:take-snapshot")
+        if (!snapshotResult.success) {
+            throw new Exception("Failed to snapshot the configuration. ${snapshotResult.response.toString()}")
+        }
     }
 })
 
