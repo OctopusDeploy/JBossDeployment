@@ -233,24 +233,51 @@ def restartStandaloneServer = {
     })
 }
 
+def getHostServers = { host ->
+    def hostPrefix = host ? "/host=${host}" : ""
+
+    def serverConfigsResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get servers from ${host}.")
+
+            def result = jbossCli.cmd("${hostPrefix}:read-children-names(child-type=server-config)")
+            if (!result.success) {
+                throw new Exception("Failed to read servers from ${host}. ${result.response.toString()}")
+            }
+            return result
+        }
+    })
+
+    def servers = serverConfigsResult.response.get("result").asList().collect {
+        it.asString()
+    }
+
+    return servers
+}
+
 def restartDomainServer = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "Standalone"
 
-    /*
-        Restart the server
-     */
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
+    def servers = getHostServers(host)
 
-            def restartResult = jbossCli.cmd("${hostPrefix}/server-config=*:restart")
-            if (!restartResult.success) {
-                throw new Exception("Failed to restart the server ${hostName}. ${restartResult.response.toString()}")
+    servers.forEach {
+        /*
+            Restart the server
+         */
+        retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+            @Override
+            CLI.Result doWithRetry(RetryContext context) throws Exception {
+                println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
+
+                def restartResult = jbossCli.cmd("${hostPrefix}/server-config=${it}:restart")
+                if (!restartResult.success) {
+                    throw new Exception("Failed to restart the server ${hostName}. ${restartResult.response.toString()}")
+                }
             }
-        }
-    })
+        })
+    }
 }
 
 def validateSocketBinding = {
@@ -363,7 +390,6 @@ def configureManagementStandalone = {
         }
     })
 }
-
 
 def getHosts = {
     if (options.'no-hosts') {
