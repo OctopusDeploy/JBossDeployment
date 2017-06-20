@@ -350,7 +350,7 @@ def getMasterHosts = {
     def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get server groups.")
+            println("Attempt ${context.retryCount + 1} to get master host.")
 
             def result = jbossCli.cmd("/host=*:read-resource")
             if (!result.success) {
@@ -373,7 +373,7 @@ def getSlaveHosts = {
     def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get server groups.")
+            println("Attempt ${context.retryCount + 1} to get slave hosts.")
 
             def result = jbossCli.cmd("/host=*:read-resource")
             if (!result.success) {
