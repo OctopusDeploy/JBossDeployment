@@ -272,11 +272,11 @@ def getSocketBindingsForHost = { host ->
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get host socket groups.")
+            println("Attempt ${context.retryCount + 1} to get host socket groups for host ${host}.")
 
             def result = jbossCli.cmd(" /host=${host}/server=*/socket-binding-group=*:read-resource")
             if (!result.success) {
-                throw new Exception("Failed to get socket bindings. ${result.response.toString()}")
+                throw new Exception("Failed to get socket bindings for host ${host}. ${result.response.toString()}")
             }
 
             return result
@@ -579,9 +579,11 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         }
 
         profiles.forEach {
-            def serverGroups = getSocketBindingsForHost(it)
-            serverGroups.forEach {
-                validateSocketBinding(it)
+            slaveHosts.forEach {
+                def serverGroups = getSocketBindingsForHost(it)
+                serverGroups.forEach {
+                    validateSocketBinding(it)
+                }
             }
             addServerIdentity(it)
         }
