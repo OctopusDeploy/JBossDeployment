@@ -392,6 +392,21 @@ def getSlaveHosts = {
 
     println "Found domain slave hosts \"${hosts}\""
 
+    if (options.hosts) {
+        def suppliedHosts = ImmutableList.copyOf(Splitter.on(',')
+                .trimResults()
+                .omitEmptyStrings()
+                .split(options.hosts))
+
+        def invalid = CollectionUtils.subtract(suppliedHosts, hosts)
+
+        if (!invalid.empty) {
+            throw new Exception("The hosts ${invalid} did not match any hosts ${hosts} in the domain config")
+        }
+
+        return suppliedHosts
+    }
+
     return hosts
 }
 
