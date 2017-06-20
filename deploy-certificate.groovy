@@ -489,7 +489,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             addServerIdentity(it)
         }
 
-        hosts.forEach {
+        slaveHosts.forEach {
             restartServer(it)
         }
     }
