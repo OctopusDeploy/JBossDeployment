@@ -81,6 +81,9 @@ def backOffPolicy = new ExponentialBackOffPolicy()
 backOffPolicy.setInitialInterval(1000L)
 retryTemplate.setBackOffPolicy(backOffPolicy)
 
+/*
+    Adds the keystore details to a security realm
+ */
 def addKeystoreToRealm = { host, realm ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "Standalone"
@@ -121,6 +124,9 @@ def addKeystoreToRealm = { host, realm ->
     })
 }
 
+/*
+    Adds ssl details to a host for the default realm
+ */
 def addSslToHost = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "Standalone"
@@ -146,6 +152,9 @@ def addSslToHost = { host ->
     addKeystoreToRealm(host, OCTOPUS_SSL_REALM)
 }
 
+/*
+    Gets the names of the undertow servers
+ */
 def getUndertowServers = { profile ->
     def profilePrefix = profile ? "/profile=${profile}" : ""
     def profileName = profile ?: "Standalone"
@@ -174,8 +183,9 @@ def getUndertowServers = { profile ->
     return servers
 }
 
-
-
+/*
+    Restarts a host
+ */
 def restartServer = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "Standalone"
@@ -196,6 +206,9 @@ def restartServer = { host ->
     })
 }
 
+/*
+    Gets the default interface of a socket binding group
+ */
 def getDefaultInterface = { socketGroup ->
     def defaultInterfaceResult = jbossCli.cmd("/socket-binding-group=${socketGroup}:read-resource")
     if (!defaultInterfaceResult.success) {
@@ -207,6 +220,9 @@ def getDefaultInterface = { socketGroup ->
     return defaultInterface
 }
 
+/*
+    Ensures that the https socket binding exists for the given group
+ */
 def validateSocketBinding = { socketGroup ->
 
     def defaultInterface = getDefaultInterface(socketGroup)
@@ -235,6 +251,9 @@ def validateSocketBinding = { socketGroup ->
     })
 }
 
+/*
+    Ensures that the management-https socket binding exists
+ */
 def validateManagementSocketBinding = {
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
@@ -292,6 +311,9 @@ def getSocketBindingsForHost = { host ->
     return socketGroups
 }
 
+/*
+    Sets up the https socket binding for a profile
+ */
 def addServerIdentity = { profile ->
 
     def profilePrefix = profile ? "/profile=${profile}" : ""
@@ -333,6 +355,9 @@ def addServerIdentity = { profile ->
     })
 }
 
+/*
+    Gets the name of the management realm
+ */
 def getManagementRealm = {host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "Standalone"
@@ -353,6 +378,9 @@ def getManagementRealm = {host ->
     return hostResult.response.get("result").asString()
 }
 
+/*
+    Configures the secure socket for the management interface
+ */
 def configureManagementDomain = { host ->
     def hostPrefix = "/host=${host}"
 
@@ -391,6 +419,9 @@ def configureManagementDomain = { host ->
     })
 }
 
+/*
+    Configures the socket group binding for the standalone management interface
+ */
 def configureManagementStandalone = {
     validateManagementSocketBinding()
     addKeystoreToRealm(null, getManagementRealm(null))
@@ -421,6 +452,9 @@ def configureManagementStandalone = {
     })
 }
 
+/*
+    Get the domain master host
+ */
 def getMasterHosts = {
     def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
@@ -446,6 +480,9 @@ def getMasterHosts = {
     return hosts.first()
 }
 
+/*
+    Get the domain slave hosts that we will be working with
+ */
 def getSlaveHosts = {
     def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
@@ -486,6 +523,9 @@ def getSlaveHosts = {
     return hosts
 }
 
+/*
+    Get the profiles that we will be working with
+ */
 def getProfiles = {
     if (options.'no-profiles') {
         return []
