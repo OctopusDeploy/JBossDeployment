@@ -260,7 +260,7 @@ def validateManagementSocketBinding = { socketGroup ->
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to validate management socket binding.")
 
-            def defaultInterface = getDefaultInterface()
+            def defaultInterface = getDefaultInterface(socketGroup)
 
             def result = jbossCli.cmd("/socket-binding-group=${socketGroup}/socket-binding=management-https:read-resource")
             if (!result.success) {
