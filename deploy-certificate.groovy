@@ -83,7 +83,7 @@ retryTemplate.setBackOffPolicy(backOffPolicy)
 
 def addKeystoreToRealm = { host, realm ->
     def hostPrefix = host ? "/host=${host}" : ""
-    def hostName = host ?: "NONE"
+    def hostName = host ?: "Standalone"
 
     /*
         Add the server identity to the web interface
@@ -123,7 +123,7 @@ def addKeystoreToRealm = { host, realm ->
 
 def addSslToHost = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
-    def hostName = host ?: "NONE"
+    def hostName = host ?: "Standalone"
 
     /*
         Add the security realm
@@ -148,7 +148,7 @@ def addSslToHost = { host ->
 
 def getUndertowServers = { profile ->
     def profilePrefix = profile ? "/profile=${profile}" : ""
-    def profileName = profile ?: "NONE"
+    def profileName = profile ?: "Standalone"
 
     def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
@@ -176,7 +176,7 @@ def getUndertowServers = { profile ->
 
 def addServerIdentity = { profile ->
     def profilePrefix = profile ? "/profile=${profile}" : ""
-    def profileName = profile ?: "NONE"
+    def profileName = profile ?: "Standalone"
 
     def servers = getUndertowServers(profile)
 
@@ -217,7 +217,7 @@ def addServerIdentity = { profile ->
 
 def restartServer = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
-    def hostName = host ?: "NONE"
+    def hostName = host ?: "Standalone"
 
     /*
         Restart the server
@@ -260,7 +260,7 @@ def validateSocketBinding = {
 
 def getManagementRealm = {host ->
     def hostPrefix = host ? "/host=${host}" : ""
-    def hostName = host ?: "NONE"
+    def hostName = host ?: "Standalone"
 
     def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
@@ -280,7 +280,7 @@ def getManagementRealm = {host ->
 
 def configureManagementDomain = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
-    def hostName = host ?: "NONE"
+    def hostName = host ?: "Standalone"
 
     /*
         Bind the management interface to the ssl port
