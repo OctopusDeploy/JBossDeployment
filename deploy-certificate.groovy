@@ -208,7 +208,6 @@ def addServerIdentity = { profile ->
                     if (!realmResult.success) {
                         throw new Exception("Failed to set the security realm for server ${it} in ${profileName}. ${realmResult.response.toString()}")
                     }
-
                 }
             }
         }
@@ -387,46 +386,6 @@ def getSlaveHosts = {
         !it.get("result").get("master").asBoolean()
     }.collect {
         it.get("result").get("name").asString()
-    }
-
-    return hosts
-}
-
-def getHosts = {
-    if (options.'no-hosts') {
-        return []
-    }
-
-    def hostResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get server groups.")
-
-            def result = jbossCli.cmd("/host=*:read-resource")
-            if (!result.success) {
-                throw new Exception("Failed to read host information. ${result.response.toString()}")
-            }
-            return result
-        }
-    })
-
-    def hosts = hostResult.response.get("result").asList().collect {
-        it.get("result").get("name").asString()
-    }
-
-    if (options.hosts) {
-        def suppliedHosts = ImmutableList.copyOf(Splitter.on(',')
-                .trimResults()
-                .omitEmptyStrings()
-                .split(options.hosts))
-
-        def invalid = CollectionUtils.subtract(suppliedHosts, hosts)
-
-        if (!invalid.empty) {
-            throw new Exception("The hosts ${invalid} did not match any hosts ${hosts} in the domain")
-        }
-
-        return suppliedHosts
     }
 
     return hosts
