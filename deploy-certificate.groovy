@@ -208,12 +208,15 @@ def getDefaultInterface = {
 }
 
 def validateSocketBinding = { socketGroup ->
+
+    def defaultInterface = getDefaultInterface(socketGroup)
+
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to validate management socket binding.")
+            println("Attempt ${context.retryCount + 1} to validate socket binding.")
 
-            def defaultInterface = getDefaultInterface(socketGroup)
+
 
             def result = jbossCli.cmd("/socket-binding-group=${socketGroup}/socket-binding=https:read-resource")
             if (!result.success) {
@@ -226,7 +229,7 @@ def validateSocketBinding = { socketGroup ->
                 def defaultIsPublic = "public".equals(defaultInterface)
 
                 if (isPublicPort || (isUndefined && defaultIsPublic)) {
-                    throw new Exception("management-https socket binding was not for the management interface. ${result.response.toString()}")
+                    throw new Exception("https socket binding was not for the public interface. ${result.response.toString()}")
                 }
             }
             return result
