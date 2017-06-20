@@ -293,7 +293,7 @@ def getSocketBindingsForHost = { host ->
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to get host socket groups for host ${host}.")
 
-            def result = jbossCli.cmd(" /host=${host}/server=*/socket-binding-group=*:read-resource")
+            def result = jbossCli.cmd("/host=${host}/server=*/socket-binding-group=*:read-resource")
             if (!result.success) {
                 throw new Exception("Failed to get socket groups for host ${host}. ${result.response.toString()}")
             }
@@ -309,6 +309,33 @@ def getSocketBindingsForHost = { host ->
     println "Found socket groups ${socketGroups} for host ${host}"
 
     return socketGroups
+}
+
+/*
+    Returns the name of the socket binding group used in the standalone instance
+ */
+def getSocketBindingsForStandalone = {
+    def result = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get host socket groups for host ${host}.")
+
+            def result = jbossCli.cmd("/socket-binding-group=*:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to get socket groups for standalone. ${result.response.toString()}")
+            }
+
+            return result
+        }
+    })
+
+    def socketGroup = result.response.get("result").asList().collect {
+        it.get("result").get("name").asString()
+    }.first()
+
+    println "Found socket group ${socketGroup} for standalone"
+
+    return socketGroup
 }
 
 /*
@@ -644,7 +671,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         /*
             Bind the web interface to the ssl security realm
          */
-        validateSocketBinding("standard-sockets")
+        validateSocketBinding(getSocketBindingsForStandalone())
         addServerIdentity(null)
     }
 
