@@ -269,7 +269,7 @@ def restartDomainServer = { host ->
         retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
             @Override
             CLI.Result doWithRetry(RetryContext context) throws Exception {
-                println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
+                println("Attempt ${context.retryCount + 1} to restart server ${it} in ${hostName}.")
 
                 def restartResult = jbossCli.cmd("${hostPrefix}/server-config=${it}:restart")
                 if (!restartResult.success) {
