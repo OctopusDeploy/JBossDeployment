@@ -196,7 +196,7 @@ def restartServer = { host ->
     })
 }
 
-def getDefaultInterface = {
+def getDefaultInterface = { socketGroup ->
     def defaultInterfaceResult = jbossCli.cmd("/socket-binding-group=${socketGroup}:read-resource")
     if (!defaultInterfaceResult.success) {
         throw new Exception("Failed to validate socket binding. ${defaultInterfaceResult.response.toString()}")
@@ -215,8 +215,6 @@ def validateSocketBinding = { socketGroup ->
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to validate socket binding.")
-
-
 
             def result = jbossCli.cmd("/socket-binding-group=${socketGroup}/socket-binding=https:read-resource")
             if (!result.success) {
