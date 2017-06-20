@@ -215,7 +215,9 @@ def addServerIdentity = { profile ->
     })
 }
 
-def restartStandaloneServer = {
+def restartServer = { host ->
+    def hostPrefix = host ? "/host=${host}" : ""
+    def hostName = host ?: "Standalone"
 
     /*
         Restart the server
@@ -223,61 +225,14 @@ def restartStandaloneServer = {
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to restart standalone server.")
+            println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
 
-            def restartResult = jbossCli.cmd("/:shutdown(restart=true)")
+            def restartResult = jbossCli.cmd("${hostPrefix}/:shutdown(restart=true)")
             if (!restartResult.success) {
                 throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
             }
         }
     })
-}
-
-def getHostServers = { host ->
-    def hostPrefix = host ? "/host=${host}" : ""
-
-    def serverConfigsResult = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get servers from ${host}.")
-
-            def result = jbossCli.cmd("${hostPrefix}:read-children-names(child-type=server-config)")
-            if (!result.success) {
-                throw new Exception("Failed to read servers from ${host}. ${result.response.toString()}")
-            }
-            return result
-        }
-    })
-
-    def servers = serverConfigsResult.response.get("result").asList().collect {
-        it.asString()
-    }
-
-    return servers
-}
-
-def restartDomainServer = { host ->
-    def hostPrefix = host ? "/host=${host}" : ""
-    def hostName = host ?: "Standalone"
-
-    def servers = getHostServers(host)
-
-    servers.forEach {
-        /*
-            Restart the server
-         */
-        retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-            @Override
-            CLI.Result doWithRetry(RetryContext context) throws Exception {
-                println("Attempt ${context.retryCount + 1} to restart server ${it} in ${hostName}.")
-
-                def restartResult = jbossCli.cmd("${hostPrefix}/server-config=${it}:restart")
-                if (!restartResult.success) {
-                    throw new Exception("Failed to restart the server ${hostName}. ${restartResult.response.toString()}")
-                }
-            }
-        })
-    }
 }
 
 def validateSocketBinding = {
@@ -390,6 +345,7 @@ def configureManagementStandalone = {
         }
     })
 }
+
 
 def getHosts = {
     if (options.'no-hosts') {
@@ -525,10 +481,10 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         profiles.forEach {
             addServerIdentity(it)
         }
+    }
 
-        hosts.forEach {
-            restartDomainServer(it)
-        }
+    hosts.forEach {
+        restartServer(it)
     }
 
 } else {
@@ -549,7 +505,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     /*
         Restart the server
      */
-    restartStandaloneServer()
+    restartServer(null)
 }
 
 /*
