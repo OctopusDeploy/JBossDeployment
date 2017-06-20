@@ -174,7 +174,123 @@ def getUndertowServers = { profile ->
     return servers
 }
 
+
+
+def restartServer = { host ->
+    def hostPrefix = host ? "/host=${host}" : ""
+    def hostName = host ?: "Standalone"
+
+    /*
+        Restart the server
+     */
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
+
+            def restartResult = jbossCli.cmd("${hostPrefix}/:shutdown(restart=true)")
+            if (!restartResult.success) {
+                throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
+            }
+        }
+    })
+}
+
+def getDefaultInterface = {
+    def defaultInterfaceResult = jbossCli.cmd("/socket-binding-group=${socketGroup}:read-resource")
+    if (!defaultInterfaceResult.success) {
+        throw new Exception("Failed to validate socket binding. ${defaultInterfaceResult.response.toString()}")
+    }
+
+    def defaultInterface = defaultInterfaceResult.response.get("result").get("default-interface").asString()
+
+    return defaultInterface
+}
+
+def validateSocketBinding = { socketGroup ->
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to validate management socket binding.")
+
+            def defaultInterface = getDefaultInterface(socketGroup)
+
+            def result = jbossCli.cmd("/socket-binding-group=${socketGroup}/socket-binding=https:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to validate socket binding. ${result.response.toString()}")
+            } else {
+                def bindingInterface = result.response.get("result").get("interface").asString()
+
+                def isUndefined = !bindingInterface
+                def isPublicPort = "public".equals(bindingInterface)
+                def defaultIsPublic = "public".equals(defaultInterface)
+
+                if (isPublicPort || (isUndefined && defaultIsPublic)) {
+                    throw new Exception("management-https socket binding was not for the management interface. ${result.response.toString()}")
+                }
+            }
+            return result
+        }
+    })
+}
+
+def validateManagementSocketBinding = {
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to validate management socket binding.")
+
+            def defaultInterface = getDefaultInterface()
+
+            def result = jbossCli.cmd("/socket-binding-group=*/socket-binding=management-https:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to validate socket binding. ${result.response.toString()}")
+            } else {
+                def bindingInterface = result.response.get("result").asList().collect {
+                    it.get("result").get("interface").asString()
+                }.first()
+
+                def isUndefined = !bindingInterface
+                def isManagementPort = "management".equals(bindingInterface)
+                def defaultIsManagement = "management".equals(defaultInterface)
+
+                if (isManagementPort || (isUndefined && defaultIsManagement)) {
+                    throw new Exception("management-https socket binding was not for the management interface. ${result.response.toString()}")
+                }
+            }
+            return result
+        }
+    })
+}
+
+/*
+    Returns all the socket binding groups used by the servers maintained
+    by the supplied host
+ */
+def getSocketBindingsForHost = { host ->
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to get host socket groups.")
+
+            def result = jbossCli.cmd(" /host=${host}/server=*/socket-binding-group=*:read-resource")
+            if (!result.success) {
+                throw new Exception("Failed to get socket bindings. ${result.response.toString()}")
+            }
+
+            return result
+        }
+    })
+
+    def socketGroups = result.response.get("result").asList().collect {
+        it.get("result").get("name").asString()
+    }
+
+    return socketGroups
+}
+
 def addServerIdentity = { profile ->
+
     def profilePrefix = profile ? "/profile=${profile}" : ""
     def profileName = profile ?: "Standalone"
 
@@ -210,49 +326,6 @@ def addServerIdentity = { profile ->
                     }
                 }
             }
-        }
-    })
-}
-
-def restartServer = { host ->
-    def hostPrefix = host ? "/host=${host}" : ""
-    def hostName = host ?: "Standalone"
-
-    /*
-        Restart the server
-     */
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
-
-            def restartResult = jbossCli.cmd("${hostPrefix}/:shutdown(restart=true)")
-            if (!restartResult.success) {
-                throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
-            }
-        }
-    })
-}
-
-def validateSocketBinding = {
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
-        @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to validate socket binding.")
-
-            def result = jbossCli.cmd("/socket-binding-group=*/socket-binding=management-https:read-resource")
-            if (!result.success) {
-                throw new Exception("Failed to validate socket binding. ${result.response.toString()}")
-            } else {
-                def isManagementPort = result.response.get("result").asList().collect {
-                    it.get("result").get("interface").asString()
-                }.contains("management")
-
-                if (!isManagementPort) {
-                    throw new Exception("management-https socket binding was not for the management interface. ${result.response.toString()}")
-                }
-            }
-            return result
         }
     })
 }
@@ -316,7 +389,7 @@ def configureManagementDomain = { host ->
 }
 
 def configureManagementStandalone = {
-    validateSocketBinding()
+    validateManagementSocketBinding()
     addKeystoreToRealm(null, getManagementRealm(null))
 
     /*
@@ -505,6 +578,10 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         }
 
         profiles.forEach {
+            def serverGroups = getSocketBindingsForHost(it)
+            serverGroups.forEach {
+                validateSocketBinding(it)
+            }
             addServerIdentity(it)
         }
 
@@ -524,6 +601,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         /*
             Bind the web interface to the ssl security realm
          */
+        validateSocketBinding("standard-sockets")
         addServerIdentity(null)
     }
 
