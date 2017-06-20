@@ -285,9 +285,9 @@ def configureManagementDomain = { host ->
     /*
         Bind the management interface to the ssl port
     */
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    return retryTemplate.execute(new RetryCallback<Boolean, Exception>() {
         @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
+        Boolean doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to change management socket binding for ${hostName}.")
 
             /*
@@ -310,8 +310,12 @@ def configureManagementDomain = { host ->
                     if (!socketBindingResult.success) {
                         throw new Exception("Failed to change management socket binding for ${hostName}. ${socketBindingResult.response.toString()}")
                     }
+
+                    return true
                 }
             }
+
+            return false
         }
     })
 }
@@ -471,7 +475,9 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         }
 
         hosts.forEach {
-            configureManagementDomain(it)
+            if (configureManagementDomain(it)) {
+                restartServer(it)
+            }
         }
     } else {
         hosts.forEach {
@@ -481,10 +487,10 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         profiles.forEach {
             addServerIdentity(it)
         }
-    }
 
-    hosts.forEach {
-        restartServer(it)
+        hosts.forEach {
+            restartServer(it)
+        }
     }
 
 } else {
