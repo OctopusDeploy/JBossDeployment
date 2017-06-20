@@ -215,7 +215,25 @@ def addServerIdentity = { profile ->
     })
 }
 
-def restartServer = { host ->
+def restartStandaloneServer = {
+
+    /*
+        Restart the server
+     */
+    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+        @Override
+        CLI.Result doWithRetry(RetryContext context) throws Exception {
+            println("Attempt ${context.retryCount + 1} to restart standalone server.")
+
+            def restartResult = jbossCli.cmd("/:shutdown(restart=true)")
+            if (!restartResult.success) {
+                throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
+            }
+        }
+    })
+}
+
+def restartDomainServer = { host ->
     def hostPrefix = host ? "/host=${host}" : ""
     def hostName = host ?: "Standalone"
 
@@ -227,9 +245,9 @@ def restartServer = { host ->
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to restart server ${hostName}.")
 
-            def restartResult = jbossCli.cmd("${hostPrefix}/:reload")
+            def restartResult = jbossCli.cmd("${hostPrefix}/server-config=*:restart")
             if (!restartResult.success) {
-                throw new Exception("Failed to restart the server. ${restartResult.response.toString()}")
+                throw new Exception("Failed to restart the server ${hostName}. ${restartResult.response.toString()}")
             }
         }
     })
@@ -484,7 +502,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     }
 
     hosts.forEach {
-        restartServer(it)
+        restartDomainServer(it)
     }
 
 } else {
@@ -505,7 +523,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     /*
         Restart the server
      */
-    restartServer(null)
+    restartStandaloneServer()
 }
 
 /*
