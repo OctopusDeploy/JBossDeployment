@@ -272,7 +272,7 @@ def validateManagementSocketBinding = { socketGroup ->
                 def isManagementPort = "management".equals(bindingInterface)
                 def defaultIsManagement = "management".equals(defaultInterface)
 
-                if (isManagementPort || (isUndefined && defaultIsManagement)) {
+                if (!(isManagementPort || (isUndefined && defaultIsManagement))) {
                     throw new Exception("management-https socket binding was not for the management interface. Binding was ${bindingInterface} and default was ${defaultInterface}. ${result.response.toString()}")
                 }
             }
