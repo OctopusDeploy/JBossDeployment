@@ -276,7 +276,7 @@ def getSocketBindingsForHost = { host ->
 
             def result = jbossCli.cmd(" /host=${host}/server=*/socket-binding-group=*:read-resource")
             if (!result.success) {
-                throw new Exception("Failed to get socket bindings for host ${host}. ${result.response.toString()}")
+                throw new Exception("Failed to get socket groups for host ${host}. ${result.response.toString()}")
             }
 
             return result
