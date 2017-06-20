@@ -254,7 +254,7 @@ def validateSocketBinding = { socketGroup ->
 /*
     Ensures that the management-https socket binding exists
  */
-def validateManagementSocketBinding = {
+def validateManagementSocketBinding = { socketGroup ->
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
@@ -262,13 +262,11 @@ def validateManagementSocketBinding = {
 
             def defaultInterface = getDefaultInterface()
 
-            def result = jbossCli.cmd("/socket-binding-group=*/socket-binding=management-https:read-resource")
+            def result = jbossCli.cmd("/socket-binding-group=${socketGroup}/socket-binding=management-https:read-resource")
             if (!result.success) {
                 throw new Exception("Failed to validate socket binding. ${result.response.toString()}")
             } else {
-                def bindingInterface = result.response.get("result").asList().collect {
-                    it.get("result").get("interface").asString()
-                }.first()
+                def bindingInterface = result.response.get("result").get("interface").asString()
 
                 def isUndefined = !bindingInterface
                 def isManagementPort = "management".equals(bindingInterface)
@@ -318,7 +316,7 @@ def getSocketBindingsForStandalone = {
     def result = retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to get host socket groups for host ${host}.")
+            println("Attempt ${context.retryCount + 1} to get socket group for standalone.")
 
             def result = jbossCli.cmd("/socket-binding-group=*:read-resource")
             if (!result.success) {
@@ -449,8 +447,8 @@ def configureManagementDomain = { host ->
 /*
     Configures the socket group binding for the standalone management interface
  */
-def configureManagementStandalone = {
-    validateManagementSocketBinding()
+def configureManagementStandalone = { socketGroup ->
+    validateManagementSocketBinding(socketGroup)
     addKeystoreToRealm(null, getManagementRealm(null))
 
     /*
@@ -661,7 +659,7 @@ if (jbossCli.getCommandContext().isDomainMode()) {
     }
 } else {
     if (options.'management-interface') {
-        configureManagementStandalone()
+        configureManagementStandalone(getSocketBindingsForStandalone())
     } else {
         /*
             Configure the core-management subsystem
