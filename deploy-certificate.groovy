@@ -365,6 +365,8 @@ def getMasterHosts = {
         it.get("result").get("name").asString()
     }
 
+    println "Found master ${hosts.first()}"
+
     return hosts.first()
 }
 
@@ -387,6 +389,8 @@ def getSlaveHosts = {
     }.collect {
         it.get("result").get("name").asString()
     }
+
+    println "Found slaves ${hosts}"
 
     return hosts
 }
