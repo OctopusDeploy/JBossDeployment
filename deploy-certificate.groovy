@@ -214,7 +214,7 @@ def validateSocketBinding = { socketGroup ->
     retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
         @Override
         CLI.Result doWithRetry(RetryContext context) throws Exception {
-            println("Attempt ${context.retryCount + 1} to validate socket binding.")
+            println("Attempt ${context.retryCount + 1} to validate socket binding for group ${socketGroup}.")
 
             def result = jbossCli.cmd("/socket-binding-group=${socketGroup}/socket-binding=https:read-resource")
             if (!result.success) {
@@ -286,6 +286,8 @@ def getSocketBindingsForHost = { host ->
     def socketGroups = result.response.get("result").asList().collect {
         it.get("result").get("name").asString()
     }
+
+    prinln "Found socket groups ${socketGroups} for host ${host}"
 
     return socketGroups
 }
