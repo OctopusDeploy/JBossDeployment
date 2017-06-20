@@ -300,7 +300,7 @@ def configureManagementDomain = { host ->
                 /*
                     Domain configs set the secure socket directly
                  */
-                def socketExists = jbossCli.cmd("${hostPrefix}/core-service=managementcd :read-attribute(" +
+                def socketExists = jbossCli.cmd("${hostPrefix}/core-service=management:read-attribute(" +
                         "name=secure-port")
 
                 if (socketExists.success) {
