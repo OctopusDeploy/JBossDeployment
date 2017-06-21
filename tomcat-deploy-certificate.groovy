@@ -39,7 +39,7 @@ if (!serverXml.exists()) {
  */
 Files.copy(serverXml.toPath(), new File(configPath + ".${new Date().format("yyyyMMddHHmmss")}").toPath())
 
-def parser = new XMLParser()
+def parser = new XmlParser()
 parser.keepIgnorableWhitespace = true
 
 def xml = parser.parse(serverXml)
