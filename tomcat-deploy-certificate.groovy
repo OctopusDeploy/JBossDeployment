@@ -38,7 +38,7 @@ if (!serverXml.exists()) {
 /*
     Do a backup
  */
-Files.copy(Paths.get(serverXml), new File(configPath + ".${new Date().format("yyyyMMddHHmmss")}"))
+Files.copy(serverXml.toPath(), new File(configPath + ".${new Date().format("yyyyMMddHHmmss")}").toPath())
 
 def xml = new XmlParser().parse(serverXml)
 
