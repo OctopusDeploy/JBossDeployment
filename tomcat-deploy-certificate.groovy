@@ -1,5 +1,6 @@
 import groovy.xml.XmlUtil
 import groovy.xml.QName
+import java.nio.file.Files
 
 /*
     Define and parse the command line arguments
