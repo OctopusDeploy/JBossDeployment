@@ -154,9 +154,9 @@ def addSslToHost = { host ->
     /*
         Add the security realm
      */
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    def updated = retryTemplate.execute(new RetryCallback<Boolean, Exception>() {
         @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
+        Boolean doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to add security realm for ${hostName}.")
 
             def existsResult = jbossCli.cmd("${hostPrefix}/core-service=management/security-realm=${OCTOPUS_SSL_REALM}:read-resource")
@@ -165,11 +165,15 @@ def addSslToHost = { host ->
                 if (!addRealm.success) {
                     throw new Exception("Failed to add security realm for ${hostName}. ${addRealm.response.toString()}")
                 }
+
+                return true
             }
+
+            return false
         }
     })
 
-    addKeystoreToRealm(host, OCTOPUS_SSL_REALM)
+    return updated || addKeystoreToRealm(host, OCTOPUS_SSL_REALM)
 }
 
 /*
@@ -370,9 +374,11 @@ def addServerIdentity = { profile ->
 
     def servers = getUndertowServers(profile)
 
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    return retryTemplate.execute(new RetryCallback<Boolean, Exception>() {
         @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
+        Boolean doWithRetry(RetryContext context) throws Exception {
+
+            def updated = false
 
             servers.forEach {
                 println("Attempt ${context.retryCount + 1} to set the https listener for server ${it} in ${profileName}.")
@@ -385,21 +391,40 @@ def addServerIdentity = { profile ->
                     if (!realmResult.success) {
                         throw new Exception("Failed to set the https realm for ${profileName}. ${realmResult.response.toString()}")
                     }
+
+                    updated = true
                 } else {
-                    def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:write-attribute(" +
-                            "name=socket-binding, " +
-                            "value=https)")
-                    if (!bindingResult.success) {
-                        throw new Exception("Failed to set the socket binding for ${profileName}. ${bindingResult.response.toString()}")
+                    def existingBinding = existsResult.response.get("result").get("socket-binding").asString()
+                    def existingSecurityRealm = existsResult.response.get("result").get("security-realm").asString()
+
+                    def updateBinding = !"https".equals(existingBinding)
+                    def updateRealm = !OCTOPUS_SSL_REALM.equals(existingSecurityRealm)
+
+                    if (updateBinding) {
+                        def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:write-attribute(" +
+                                "name=socket-binding, " +
+                                "value=https)")
+                        if (!bindingResult.success) {
+                            throw new Exception("Failed to set the socket binding for ${profileName}. ${bindingResult.response.toString()}")
+                        }
                     }
-                    def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:write-attribute(" +
-                            "name=security-realm, " +
-                            "value=${OCTOPUS_SSL_REALM})")
-                    if (!realmResult.success) {
-                        throw new Exception("Failed to set the security realm for server ${it} in ${profileName}. ${realmResult.response.toString()}")
+
+                    if (updateRealm) {
+                        def realmResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:write-attribute(" +
+                                "name=security-realm, " +
+                                "value=${OCTOPUS_SSL_REALM})")
+                        if (!realmResult.success) {
+                            throw new Exception("Failed to set the security realm for server ${it} in ${profileName}. ${realmResult.response.toString()}")
+                        }
+                    }
+
+                    if (updateRealm || updateBinding) {
+                        updated = true
                     }
                 }
             }
+
+            return updated
         }
     })
 }
@@ -446,20 +471,26 @@ def configureManagementDomain = { host ->
              */
             def httpInterfaceResult = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:read-resource")
             if (httpInterfaceResult.success) {
-                addKeystoreToRealm(host, getManagementRealm(host))
+                def addedKeystore = addKeystoreToRealm(host, getManagementRealm(host))
 
-                /*
-                    Domain configs set the secure socket directly
-                 */
-                def socketBindingResult = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:write-attribute(" +
-                        "name=secure-port, " +
-                        "value=${options.'management-port'}")
-                if (!socketBindingResult.success) {
-                    throw new Exception("Failed to change management socket binding for ${host}. ${socketBindingResult.response.toString()}")
+                def existingSecurePort = httpInterfaceResult.response.get("result").get("secure-port").asString()
+
+                if (!options.'management-port'.equals(existingSecurePort)) {
+
+                    /*
+                        Domain configs set the secure socket directly
+                     */
+                    def socketBindingResult = jbossCli.cmd("${hostPrefix}/core-service=management/management-interface=http-interface:write-attribute(" +
+                            "name=secure-port, " +
+                            "value=${options.'management-port'}")
+                    if (!socketBindingResult.success) {
+                        throw new Exception("Failed to change management socket binding for ${host}. ${socketBindingResult.response.toString()}")
+                    }
+
+                    return true
                 }
 
-                return true
-
+                return addedKeystore
             }
 
             println "${hostName} has no http management interface, so skipping"
@@ -473,15 +504,16 @@ def configureManagementDomain = { host ->
  */
 def configureManagementStandalone = { socketGroup ->
     validateManagementSocketBinding(socketGroup)
-    addKeystoreToRealm(null, getManagementRealm(null))
 
     /*
         Bind the management interface to the ssl binding group
     */
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    return retryTemplate.execute(new RetryCallback<Boolean, Exception>() {
         @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
+        Boolean doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to change management socket binding for standalone.")
+
+            def addedKeystore = addKeystoreToRealm(null, getManagementRealm(null))
 
             /*
                 We may not have a management socket binding for domain configs
@@ -490,13 +522,23 @@ def configureManagementStandalone = { socketGroup ->
                     "name=secure-socket-binding")
 
             if (socketBindingExists.success) {
-                def socketBindingResult = jbossCli.cmd("/core-service=management/management-interface=http-interface:write-attribute(" +
-                        "name=secure-socket-binding, " +
-                        "value=management-https")
-                if (!socketBindingResult.success) {
-                    throw new Exception("Failed to change management socket binding for standalone. ${socketBindingResult.response.toString()}")
+
+                def existingSecureBinding = httpInterfaceResult.response.get("result").get("secure-socket-binding").asString()
+
+                if ("management-https".equals(existingSecureBinding)) {
+
+                    def socketBindingResult = jbossCli.cmd("/core-service=management/management-interface=http-interface:write-attribute(" +
+                            "name=secure-socket-binding, " +
+                            "value=management-https")
+                    if (!socketBindingResult.success) {
+                        throw new Exception("Failed to change management socket binding for standalone. ${socketBindingResult.response.toString()}")
+                    }
+
+                    return true
                 }
             }
+
+            return addedKeystore
         }
     })
 }
@@ -662,45 +704,63 @@ if (jbossCli.getCommandContext().isDomainMode()) {
         /*
             Find the first host to have a http management interface. This will be the domain controller
          */
-        configureManagementDomain(masterHost)
-        restartServer(masterHost)
+        if (configureManagementDomain(masterHost)) {
+            restartServer(masterHost)
+        }
     } else {
+        def updated = false
+
         slaveHosts.forEach {
             def serverGroups = getSocketBindingsForHost(it)
             serverGroups.forEach {
                 validateSocketBinding(it)
             }
-            addSslToHost(it)
+            if (addSslToHost(it)) {
+                updated = true
+            }
         }
 
         profiles.forEach {
-            addServerIdentity(it)
+            if (addServerIdentity(it)) {
+                updated = true
+            }
         }
 
-        slaveHosts.forEach {
-            restartServer(it)
+        if (updated) {
+            slaveHosts.forEach {
+                restartServer(it)
+            }
         }
     }
 } else {
     if (options.'management-interface') {
-        configureManagementStandalone(getSocketBindingsForStandalone())
+        if (configureManagementStandalone(getSocketBindingsForStandalone())) {
+            restartServer(null)
+        }
     } else {
+        def updated = false
+
         /*
             Configure the core-management subsystem
          */
-        addSslToHost(null)
+        if (addSslToHost(null)) {
+            updated = true
+        }
 
         /*
             Bind the web interface to the ssl security realm
          */
         validateSocketBinding(getSocketBindingsForStandalone())
-        addServerIdentity(null)
+        if (addServerIdentity(null)) {
+            updated = true
+        }
+
+        if (updated) {
+            restartServer(null)
+        }
     }
 
-    /*
-        Restart the server
-     */
-    restartServer(null)
+
 }
 
 /*
