@@ -92,12 +92,10 @@ def addKeystoreToRealm = { host, realm ->
     /*
         Add the server identity to the web interface
      */
-    retryTemplate.execute(new RetryCallback<CLI.Result, Exception>() {
+    return retryTemplate.execute(new RetryCallback<Boolean, Exception>() {
         @Override
-        CLI.Result doWithRetry(RetryContext context) throws Exception {
+        Boolean doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to add server identity for ${hostName}.")
-
-
 
             def existsResult = jbossCli.cmd("${hostPrefix}/core-service=management/security-realm=${realm}/server-identity=ssl:read-resource")
             if (existsResult.success) {
@@ -112,7 +110,7 @@ def addKeystoreToRealm = { host, realm ->
                         options.'keystore-file'.equals(existingKeystorePath) &&
                         options.'keystore-password'.equals(existingKeystorePassword)) {
                     println "No changes need to be made to to add server identity for ${hostName}"
-                    return
+                    return false
                 }
 
                 /*
@@ -140,6 +138,8 @@ def addKeystoreToRealm = { host, realm ->
             if (!addResult.success) {
                 throw new Exception("Failed to create server identity for ${hostName}. ${addResult.response.toString()}")
             }
+
+            return true
         }
     })
 }
@@ -387,7 +387,7 @@ def addServerIdentity = { profile ->
                     }
                 } else {
                     def bindingResult = jbossCli.cmd("${profilePrefix}/subsystem=undertow/server=${it}/https-listener=https/:write-attribute(" +
-                            "name=socket-binding, " + "" +
+                            "name=socket-binding, " +
                             "value=https)")
                     if (!bindingResult.success) {
                         throw new Exception("Failed to set the socket binding for ${profileName}. ${bindingResult.response.toString()}")
