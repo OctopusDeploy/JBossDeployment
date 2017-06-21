@@ -1,7 +1,4 @@
 #!/usr/bin/env groovy
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-
 @Grab(group='org.wildfly.core', module='wildfly-embedded', version='2.2.1.Final')
 @Grab(group='org.wildfly.security', module='wildfly-security-manager', version='1.1.2.Final')
 @Grab(group='org.wildfly.core', module='wildfly-cli', version='3.0.0.Beta23')
@@ -12,9 +9,6 @@ import org.springframework.retry.*
 import org.springframework.retry.support.*
 import org.springframework.retry.backoff.*
 import org.springframework.retry.policy.*
-
-@Grab(group='commons-io', module='commons-io', version='2.5')
-import org.apache.commons.io.*
 
 @Grab(group='com.google.guava', module='guava', version='22.0')
 import com.google.common.base.Splitter
