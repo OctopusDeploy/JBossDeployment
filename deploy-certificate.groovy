@@ -97,12 +97,7 @@ def addKeystoreToRealm = { host, realm ->
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to add server identity for ${hostName}.")
 
-            def keystoreFile = options.'keystore-file'
-                    .replaceAll('\\\\', '\\\\\\\\')
-                    .replaceAll('"', '\\\\"')
-            def keystorePassword = options.'keystore-password'
-                    .replaceAll('\\\\', '\\\\\\\\')
-                    .replaceAll('"', '\\\\"')
+
 
             def existsResult = jbossCli.cmd("${hostPrefix}/core-service=management/security-realm=${realm}/server-identity=ssl:read-resource")
             if (existsResult.success) {
@@ -114,8 +109,8 @@ def addKeystoreToRealm = { host, realm ->
                 def existingKeystorePassword = existsResult.response.get("result").get("keystore-password").asString()
 
                 if ("octopus".equals(existingAlias) &&
-                        keystoreFile.equals(existingKeystorePath) &&
-                        keystorePassword.equals(existingKeystorePassword)) {
+                        options.'keystore-file'.equals(existingKeystorePath) &&
+                        options.'keystore-password'.equals(existingKeystorePassword)) {
                     println "No changes need to be made to to add server identity for ${hostName}"
                     return
                 }
@@ -128,6 +123,13 @@ def addKeystoreToRealm = { host, realm ->
                     throw new Exception("Failed to remove server identity for ${hostName}. ${removeResult.response.toString()}")
                 }
             }
+
+            def keystoreFile = options.'keystore-file'
+                    .replaceAll('\\\\', '\\\\\\\\')
+                    .replaceAll('"', '\\\\"')
+            def keystorePassword = options.'keystore-password'
+                    .replaceAll('\\\\', '\\\\\\\\')
+                    .replaceAll('"', '\\\\"')
 
             def command = "${hostPrefix}/core-service=management/security-realm=${realm}/server-identity=ssl/:add(" +
                     "alias=\"octopus\", " +
