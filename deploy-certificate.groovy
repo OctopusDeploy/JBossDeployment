@@ -97,20 +97,37 @@ def addKeystoreToRealm = { host, realm ->
         CLI.Result doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to add server identity for ${hostName}.")
 
-            def existsResult = jbossCli.cmd("${hostPrefix}/core-service=management/security-realm=${realm}/server-identity=ssl:read-resource")
-            if (existsResult.success) {
-                def removeResult = jbossCli.cmd("${hostPrefix}/core-service=management/security-realm=${realm}/server-identity=ssl:remove")
-                if (!removeResult.success) {
-                    throw new Exception("Failed to remove server identity for ${hostName}. ${removeResult.response.toString()}")
-                }
-            }
-
             def keystoreFile = options.'keystore-file'
                     .replaceAll('\\\\', '\\\\\\\\')
                     .replaceAll('"', '\\\\"')
             def keystorePassword = options.'keystore-password'
                     .replaceAll('\\\\', '\\\\\\\\')
                     .replaceAll('"', '\\\\"')
+
+            def existsResult = jbossCli.cmd("${hostPrefix}/core-service=management/security-realm=${realm}/server-identity=ssl:read-resource")
+            if (existsResult.success) {
+                /*
+                    See if we have actual changes to make
+                 */
+                def existingAlias = existsResult.response.get("result").get("alias").asString()
+                def existingKeystorePath = existsResult.response.get("result").get("keystore-path").asString()
+                def existingKeystorePassword = existsResult.response.get("result").get("keystore-password").asString()
+
+                if ("octopus".equals(existingAlias) &&
+                        keystoreFile.equals(existingKeystorePath) &&
+                        keystorePassword.equals(existingKeystorePassword)) {
+                    println "No changes need to be made to to add server identity for ${hostName}"
+                    return
+                }
+
+                /*
+                    Remove the ssl identity so it can be recreated
+                 */
+                def removeResult = jbossCli.cmd("${hostPrefix}/core-service=management/security-realm=${realm}/server-identity=ssl:remove")
+                if (!removeResult.success) {
+                    throw new Exception("Failed to remove server identity for ${hostName}. ${removeResult.response.toString()}")
+                }
+            }
 
             def command = "${hostPrefix}/core-service=management/security-realm=${realm}/server-identity=ssl/:add(" +
                     "alias=\"octopus\", " +
