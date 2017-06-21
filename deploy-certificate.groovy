@@ -706,6 +706,8 @@ if (jbossCli.getCommandContext().isDomainMode()) {
          */
         if (configureManagementDomain(masterHost)) {
             restartServer(masterHost)
+        } else {
+            println "No changes made, so no restart done"
         }
     } else {
         def updated = false
@@ -730,12 +732,16 @@ if (jbossCli.getCommandContext().isDomainMode()) {
             slaveHosts.forEach {
                 restartServer(it)
             }
+        } else {
+            println "No changes made, so no restart done"
         }
     }
 } else {
     if (options.'management-interface') {
         if (configureManagementStandalone(getSocketBindingsForStandalone())) {
             restartServer(null)
+        } else {
+            println "No changes made, so no restart done"
         }
     } else {
         def updated = false
@@ -757,6 +763,8 @@ if (jbossCli.getCommandContext().isDomainMode()) {
 
         if (updated) {
             restartServer(null)
+        } else {
+            println "No changes made, so no restart done"
         }
     }
 
