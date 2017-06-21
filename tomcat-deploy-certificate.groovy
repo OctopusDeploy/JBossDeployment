@@ -46,14 +46,14 @@ def xml = parser.parse(serverXml)
 /*
     Find the service with the supplied name
  */
-xml.service.findAll {
+xml.Service.findAll {
     options.service.equals(it.@name)
 }
 /*
     Now add the connector
  */
 .forEach {
-    def connectors = it.connector.findAll {
+    def connectors = it.Connector.findAll {
         options.'https-port'.equals(it.@port)
     }
 
@@ -84,10 +84,9 @@ xml.service.findAll {
     }
 }
 
-serverXml.withWriter { out ->
-    printer = new XmlNodePrinter( out )
-    printer.preserveWhitespace = true
-    printer.print( xml )
-}
+def writer = new FileWriter(configPath)
+def printer = new XmlNodePrinter(new PrintWriter(writer))
+printer.preserveWhitespace = true
+printer.print(xml)
 
 System.exit(0)
