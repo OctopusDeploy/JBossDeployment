@@ -85,13 +85,6 @@ xml.service.findAll {
     }
 }
 
-new XMLOutputter().with {
-    format = Format.getRawFormat()
-    format.setLineSeparator(LineSeparator.NONE)
-    // XmlOutputter can write to OutputStream or Writer, which is sufficient for most cases
-    output(doc, System.out)
-}
-
 serverXml.write(XmlUtil.serialize(xml))
 
 System.exit(0)
