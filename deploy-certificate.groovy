@@ -173,7 +173,7 @@ def addSslToHost = { host ->
         }
     })
 
-    return updated || addKeystoreToRealm(host, OCTOPUS_SSL_REALM)
+    return addKeystoreToRealm(host, OCTOPUS_SSL_REALM) || updated
 }
 
 /*
