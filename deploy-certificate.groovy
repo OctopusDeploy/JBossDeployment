@@ -524,7 +524,7 @@ def configureManagementStandalone = { socketGroup ->
 
                 def existingSecureBinding = socketBindingExists.response.get("result").get("secure-socket-binding").asString()
 
-                if ("management-https".equals(existingSecureBinding)) {
+                if (!"management-https".equals(existingSecureBinding)) {
 
                     def socketBindingResult = jbossCli.cmd("/core-service=management/management-interface=http-interface:write-attribute(" +
                             "name=secure-socket-binding, " +
