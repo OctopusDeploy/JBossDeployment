@@ -518,8 +518,7 @@ def configureManagementStandalone = { socketGroup ->
             /*
                 We may not have a management socket binding for domain configs
              */
-            def socketBindingExists = jbossCli.cmd("/core-service=management/management-interface=http-interface:read-attribute(" +
-                    "name=secure-socket-binding")
+            def socketBindingExists = jbossCli.cmd("/core-service=management/management-interface=http-interface:read-resource")
 
             if (socketBindingExists.success) {
 
