@@ -41,7 +41,6 @@ Files.copy(serverXml.toPath(), new File(configPath + ".${new Date().format("yyyy
 
 def parser = new XmlParser()
 parser.keepIgnorableWhitespace = true
-
 def xml = parser.parse(serverXml)
 
 /*
@@ -85,6 +84,10 @@ xml.service.findAll {
     }
 }
 
-serverXml.write(XmlUtil.serialize(xml))
+serverXml.withWriter { out ->
+    printer = new XmlNodePrinter( out )
+    printer.preserveWhitespace = true
+    printer.print( xml )
+}
 
 System.exit(0)
