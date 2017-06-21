@@ -1,7 +1,6 @@
 import groovy.xml.XmlUtil
 import groovy.xml.QName
 import java.nio.file.Files
-import java.nio.file.Paths
 
 /*
     Define and parse the command line arguments
@@ -40,7 +39,10 @@ if (!serverXml.exists()) {
  */
 Files.copy(serverXml.toPath(), new File(configPath + ".${new Date().format("yyyyMMddHHmmss")}").toPath())
 
-def xml = new XmlParser().parse(serverXml)
+def parser = new XMLParser()
+parser.keepIgnorableWhitespace = true
+
+def xml = parser.parse(serverXml)
 
 /*
     Find the service with the supplied name
@@ -81,6 +83,13 @@ xml.service.findAll {
             it.@sslProtocol = "TLS"
         }
     }
+}
+
+new XMLOutputter().with {
+    format = Format.getRawFormat()
+    format.setLineSeparator(LineSeparator.NONE)
+    // XmlOutputter can write to OutputStream or Writer, which is sufficient for most cases
+    output(doc, System.out)
 }
 
 serverXml.write(XmlUtil.serialize(xml))
