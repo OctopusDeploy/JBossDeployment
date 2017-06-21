@@ -523,7 +523,7 @@ def configureManagementStandalone = { socketGroup ->
 
             if (socketBindingExists.success) {
 
-                def existingSecureBinding = httpInterfaceResult.response.get("result").get("secure-socket-binding").asString()
+                def existingSecureBinding = socketBindingExists.response.get("result").get("secure-socket-binding").asString()
 
                 if ("management-https".equals(existingSecureBinding)) {
 
