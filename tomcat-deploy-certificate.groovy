@@ -1,4 +1,6 @@
 import groovy.xml.XmlUtil
+import groovy.xml.dom.DOMCategory
+import groovy.xml.DOMBuilder
 import groovy.xml.QName
 import java.nio.file.Files
 
@@ -39,54 +41,55 @@ if (!serverXml.exists()) {
  */
 Files.copy(serverXml.toPath(), new File(configPath + ".${new Date().format("yyyyMMddHHmmss")}").toPath())
 
-def parser = new XmlParser()
-parser.keepIgnorableWhitespace = true
-def xml = parser.parse(serverXml)
-
-/*
-    Find the service with the supplied name
- */
-xml.Service.findAll {
-    options.service.equals(it.@name)
-}
-/*
-    Now add the connector
- */
-.forEach {
-    def connectors = it.Connector.findAll {
-        options.'https-port'.equals(it.@port)
+def document = DOMBuilder.parse(new StringReader(serverXml.text))
+def root = document.documentElement
+use(DOMCategory) {
+    /*
+        Find the service with the supplied name
+     */
+    root.Service.findAll {
+        options.service.equals(it['@name'])
     }
+    /*
+        Now add the connector
+     */
+    .forEach {
+        def connectors = it.Connector.findAll {
+            options.'https-port'.equals(it['@port'])
+        }
 
-    if (connectors.empty) {
-        it.appendNode(
-                new QName("Connector"),
-                [
-                    port: options.'https-port',
-                    protocol: "org.apache.coyote.http11.Http11NioProtocol",
-                    scheme: "https",
-                    secure: "true",
-                    SSLEnabled: "true",
-                    keystoreFile: options.'keystore-file',
-                    keystorePass: options.'keystore-password',
-                    sslProtocol: "TLS"
-                ]
-        )
-    } else {
-        connectors.forEach {
-            it.@protocol = "org.apache.coyote.http11.Http11NioProtocol"
-            it.@scheme = "https"
-            it.@secure = "true"
-            it.@SSLEnabled = "true"
-            it.@keystoreFile = options.'keystore-file'
-            it.@keystorePass = options.'keystore-password'
-            it.@sslProtocol = "TLS"
+        if (connectors.empty) {
+            it.appendNode(
+                    new QName("Connector"),
+                    [
+                            port: options.'https-port',
+                            protocol: "org.apache.coyote.http11.Http11NioProtocol",
+                            scheme: "https",
+                            secure: "true",
+                            SSLEnabled: "true",
+                            keystoreFile: options.'keystore-file',
+                            keystorePass: options.'keystore-password',
+                            sslProtocol: "TLS"
+                    ]
+            )
+        } else {
+            connectors.forEach {
+                it['@protocol'] = "org.apache.coyote.http11.Http11NioProtocol"
+                it['@scheme'] = "https"
+                it['@secure'] = "true"
+                it['@SSLEnabled'] = "true"
+                it['@keystoreFile'] = options.'keystore-file'
+                it['@keystorePass'] = options.'keystore-password'
+                it['@sslProtocol'] = "TLS"
+            }
         }
     }
 }
 
-def writer = new FileWriter(configPath)
-def printer = new XmlNodePrinter(new PrintWriter(writer))
-printer.preserveWhitespace = true
-printer.print(xml)
+def result = XmlUtil.serialize(root)
+
+serverXml.withWriter { w ->
+    w.write(result)
+}
 
 System.exit(0)
