@@ -108,6 +108,8 @@ use(DOMCategory) {
         serverXml.withWriter { w ->
             w.write(result)
         }
+
+        println "HTTPS Connector added. Please restart Tomcat."
     } else {
         println "No updates made"
     }
