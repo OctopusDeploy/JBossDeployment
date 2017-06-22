@@ -44,6 +44,8 @@ Files.copy(serverXml.toPath(), new File(configPath + ".${new Date().format("yyyy
 def document = DOMBuilder.parse(new StringReader(serverXml.text))
 def root = document.documentElement
 use(DOMCategory) {
+    def updatePerformed = false
+
     /*
         Find the service with the supplied name
      */
@@ -54,7 +56,6 @@ use(DOMCategory) {
         Now add the connector
      */
     .forEach {
-        def updatePerformed = false
 
         def connectors = it.Connector.findAll {
             options.'https-port'.equals(it['@port'])
@@ -100,16 +101,18 @@ use(DOMCategory) {
             updatePerformed = !updatesRequired.empty
         }
     }
-}
 
-if (updatePerformed) {
-    def result = XmlUtil.serialize(root)
+    if (updatePerformed) {
+        def result = XmlUtil.serialize(root)
 
-    serverXml.withWriter { w ->
-        w.write(result)
+        serverXml.withWriter { w ->
+            w.write(result)
+        }
+    } else {
+        println "No updates made"
     }
-} else {
-    prinln "No updates made"
 }
+
+
 
 System.exit(0)
