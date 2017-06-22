@@ -54,11 +54,15 @@ use(DOMCategory) {
         Now add the connector
      */
     .forEach {
+        def updatePerformed = false
+
         def connectors = it.Connector.findAll {
             options.'https-port'.equals(it['@port'])
         }
 
         if (connectors.empty) {
+            updatePerformed = true
+
             it.appendNode(
                     new QName("Connector"),
                     [
@@ -73,7 +77,17 @@ use(DOMCategory) {
                     ]
             )
         } else {
-            connectors.forEach {
+            def updatesRequired = connectors.findAll {
+                !"org.apache.coyote.http11.Http11NioProtocol".equals(it['@protocol']) ||
+                    !"https".equals(it['@scheme']) ||
+                    !"true".equals(it['@secure']) ||
+                    !"true".equals(it['@SSLEnabled']) ||
+                    !options.'keystore-file'.equals(it['@keystoreFile']) ||
+                    !options.'keystore-password'.equals(it['@keystorePass']) ||
+                    !"TLS".equals(it['@sslProtocol'])
+            }
+
+            updatesRequired.forEach {
                 it['@protocol'] = "org.apache.coyote.http11.Http11NioProtocol"
                 it['@scheme'] = "https"
                 it['@secure'] = "true"
@@ -82,14 +96,20 @@ use(DOMCategory) {
                 it['@keystorePass'] = options.'keystore-password'
                 it['@sslProtocol'] = "TLS"
             }
+
+            updatePerformed = !updatesRequired.empty
         }
     }
 }
 
-def result = XmlUtil.serialize(root)
+if (updatePerformed) {
+    def result = XmlUtil.serialize(root)
 
-serverXml.withWriter { w ->
-    w.write(result)
+    serverXml.withWriter { w ->
+        w.write(result)
+    }
+} else {
+    prinln "No updates made"
 }
 
 System.exit(0)
