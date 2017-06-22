@@ -12,6 +12,7 @@ def cli = new CliBuilder()
 cli.with {
     h longOpt: 'help', 'Show usage information'
     t longOpt: 'tomcat-dir', args: 1, argName: 'tomcat directory', required: true, 'The Tomcat installation directory.'
+    l longOpt: 'http-port', args: 1, argName: 'port', type: Number.class, 'The HTTP port to redirect to the HTTP port.'
     p longOpt: 'https-port', args: 1, argName: 'port', required: true, type: Number.class, 'The port to expose over HTTPS.'
     s longOpt: 'service', args: 1, argName: 'service', 'The Tomcat service to add the HTTPS connector to. Defaults to "Catalina".'
     k longOpt: 'keystore-file', args: 1, argName: 'path to keystore', required: true, 'Java keystore file.'
@@ -89,6 +90,8 @@ use(DOMCategory) {
             }
 
             updatesRequired.forEach {
+                updatePerformed = true
+
                 it['@protocol'] = "org.apache.coyote.http11.Http11NioProtocol"
                 it['@scheme'] = "https"
                 it['@secure'] = "true"
@@ -97,8 +100,20 @@ use(DOMCategory) {
                 it['@keystorePass'] = options.'keystore-password'
                 it['@sslProtocol'] = "TLS"
             }
+        }
 
-            updatePerformed = !updatesRequired.empty
+        /*
+            Ensure the HTTP port is redirected to the HTTPS port
+         */
+        if (options.'http-port') {
+            it.Connector.findAll {
+                options.'http-port'.equals(it['@port'])
+            }.forEach {
+                if (!options.'https-port'.equals(it['@redirectPort'])) {
+                    updatePerformed = true
+                    it['@redirectPort'] = options.'https-port'
+                }
+            }
         }
     }
 
