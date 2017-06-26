@@ -91,19 +91,48 @@ def addVaultToHost = { host ->
         Boolean doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to add vault ${hostName}.")
 
-            def addVault = jbossCli.cmd("${hostPrefix}/core-service=vault:add(vault-options={" +
-                    "\"KEYSTORE_URL\" => \"${options.'keystore-file'}\", " +
-                    "\"KEYSTORE_PASSWORD\" => \"${options.'keystore-password'}\", " +
-                    "\"KEYSTORE_ALIAS\" => \"${options.alias ?: "vault"}\", " +
-                    "\"SALT\" => \"${options.salt ?: "12345678"}\", " +
-                    "\"ITERATION_COUNT\" => \"${options.iteration ?: "50"}\", " +
-                    "\"ENC_FILE_DIR\" => \"${options.'enc-dir'}/\"})")
 
-            if (!addVault.success) {
-                throw new Exception("Failed to add vault for ${hostName}. ${addVault.response.toString()}")
+            def vaultExists = jbossCli.cmd("${hostPrefix}/core-service=vault:read-resource")
+
+            if (vaultExists.success) {
+                def updateRequired = false
+                def properties = vaultExists.response.get("result").asPropertyList()
+
+                if (properties.find {"KEYSTORE_URL".equals(it.name) && ${options.'keystore-file'}.equals(it.vaule)} ||
+                        properties.find {"KEYSTORE_PASSWORD".equals(it.name) && ${options.'keystore-password'}.equals(it.vaule)} ||
+                        properties.find {"KEYSTORE_ALIAS".equals(it.name) && ${options.alias ?: "vault"}.equals(it.vaule)} ||
+                        properties.find {"SALT".equals(it.name) && ${options.salt ?: "12345678"}.equals(it.vaule)} ||
+                        properties.find {"ITERATION_COUNT".equals(it.name) && ${options.iteration ?: "50"}.equals(it.vaule)} ||
+                        properties.find {"ENC_FILE_DIR".equals(it.name) &&${options.'enc-dir'}.equals(it.vaule)}) {
+                    updateRequired = true
+                    def removeResult = jbossCli.cmd("${hostPrefix}/core-service=vault:remove")
+                    if (!removeResult.success) {
+                        throw new Exception("Failed to remove vault for ${hostName}. ${removeResult.response.toString()}")
+                    }
+                }
+            } else {
+                updateRequired = true
             }
 
-            return true
+            if (updateRequired) {
+                def addVault = jbossCli.cmd("${hostPrefix}/core-service=vault:add(vault-options={" +
+                        "\"KEYSTORE_URL\" => \"${options.'keystore-file'}\", " +
+                        "\"KEYSTORE_PASSWORD\" => \"${options.'keystore-password'}\", " +
+                        "\"KEYSTORE_ALIAS\" => \"${options.alias ?: "vault"}\", " +
+                        "\"SALT\" => \"${options.salt ?: "12345678"}\", " +
+                        "\"ITERATION_COUNT\" => \"${options.iteration ?: "50"}\", " +
+                        "\"ENC_FILE_DIR\" => \"${options.'enc-dir'}/\"})")
+
+                if (!addVault.success) {
+                    throw new Exception("Failed to add vault for ${hostName}. ${addVault.response.toString()}")
+                }
+
+                return true
+            }
+
+            println "No updates to vault configuration required"
+
+            return false
         }
     })
 }
