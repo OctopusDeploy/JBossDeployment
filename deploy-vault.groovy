@@ -99,12 +99,12 @@ def addVaultToHost = { host ->
 
                 def properties = vaultExists.response.get("result").get("vault-options").asPropertyList()
 
-                if (properties.find {"KEYSTORE_URL".equals(it.name) && !${options.'keystore-file'}.equals(it.vaule)} ||
-                        properties.find {"KEYSTORE_PASSWORD".equals(it.name) && !${options.'keystore-password'}.equals(it.vaule)} ||
-                        properties.find {"KEYSTORE_ALIAS".equals(it.name) && !${options.alias ?: "vault"}.equals(it.vaule)} ||
-                        properties.find {"SALT".equals(it.name) && !${options.salt ?: "12345678"}.equals(it.vaule)} ||
-                        properties.find {"ITERATION_COUNT".equals(it.name) && !${options.iteration ?: "50"}.equals(it.vaule)} ||
-                        properties.find {"ENC_FILE_DIR".equals(it.name) && !${options.'enc-dir'}.equals(it.vaule)}) {
+                if (properties.any {"KEYSTORE_URL".equals(it.name) && !${options.'keystore-file'}.equals(it.vaule)} ||
+                        properties.any {"KEYSTORE_PASSWORD".equals(it.name) && !${options.'keystore-password'}.equals(it.vaule)} ||
+                        properties.any {"KEYSTORE_ALIAS".equals(it.name) && !${options.alias ?: "vault"}.equals(it.vaule)} ||
+                        properties.any {"SALT".equals(it.name) && !${options.salt ?: "12345678"}.equals(it.vaule)} ||
+                        properties.any {"ITERATION_COUNT".equals(it.name) && !${options.iteration ?: "50"}.equals(it.vaule)} ||
+                        properties.any {"ENC_FILE_DIR".equals(it.name) && !${options.'enc-dir'}.equals(it.vaule)}) {
                     updateRequired = true
                     def removeResult = jbossCli.cmd("${hostPrefix}/core-service=vault:remove")
                     if (!removeResult.success) {
