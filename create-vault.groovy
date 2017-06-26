@@ -16,10 +16,10 @@ cli.with {
     h longOpt: 'help', 'Show usage information'
     k longOpt: 'keystore-file', args: 1, argName: 'keystore-file', required: true, 'Java keystore file'
     q longOpt: 'keystore-password', args: 1, argName: 'keystore-password', required: true, 'Keystore password'
+    e longOpt: 'enc-dir', args: 1, argName: 'enc-dir', required: true, 'Directory containing encrypted files'
     i longOpt: 'iteration', args: 1, argName: 'iteration', type: Number.class, 'Iteration count'
     s longOpt: 'salt', args: 1, argName: 'salt', '8 character salt'
     b longOpt: 'vault-block', args: 1, argName: 'vault-block', 'Vault block'
-    e longOpt: 'enc-dir', args: 1, argName: 'enc-dir', 'Directory containing encrypted files'
     c longOpt: 'csv', args: 1, argName: 'csv', 'CSV string containing variable names and values'
     v longOpt: 'alias', args: 1, argName: 'alias', 'Vault keystore alias'
 }
