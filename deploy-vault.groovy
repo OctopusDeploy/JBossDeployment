@@ -115,9 +115,16 @@ def addVaultToHost = { host ->
             }
 
             if (updateRequired) {
+                def keystoreFile = options.'keystore-file'
+                        .replaceAll('\\\\', '\\\\\\\\')
+                        .replaceAll('"', '\\\\"')
+                def keystorePassword = options.'keystore-password'
+                        .replaceAll('\\\\', '\\\\\\\\')
+                        .replaceAll('"', '\\\\"')
+
                 def addVault = jbossCli.cmd("${hostPrefix}/core-service=vault:add(vault-options={" +
-                        "\"KEYSTORE_URL\" => \"${options.'keystore-file'}\", " +
-                        "\"KEYSTORE_PASSWORD\" => \"${options.'keystore-password'}\", " +
+                        "\"KEYSTORE_URL\" => \"${keystoreFile}\", " +
+                        "\"KEYSTORE_PASSWORD\" => \"${keystorePassword}\", " +
                         "\"KEYSTORE_ALIAS\" => \"${options.alias ?: "vault"}\", " +
                         "\"SALT\" => \"${options.salt ?: "12345678"}\", " +
                         "\"ITERATION_COUNT\" => \"${options.iteration ?: "50"}\", " +
