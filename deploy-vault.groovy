@@ -104,11 +104,6 @@ def addVaultToHost = { host ->
                 def keystoreAliasChanged = properties.any {"KEYSTORE_ALIAS" == it.name && options.alias ?: "vault" != it.value.asString()}
                 def keystoreSaltChanged = properties.any {"SALT" == it.name && (options.salt ?: "12345678") != it.value.asString()}
                 def keystoreIterationChanged = properties.any {"ITERATION_COUNT" == it.name && (options.iteration ?: "50") != it.value.asString()}
-
-                /*
-                    Note that this value may not be returned as expected because of the
-                    bug at https://issues.jboss.org/browse/WFLY-8993
-                 */
                 def encDirChanged = properties.any {"ENC_FILE_DIR" == it.name && options.'enc-dir' != it.value.asString()}
 
                 if (keystoreUrlChanged ||
@@ -144,7 +139,7 @@ def addVaultToHost = { host ->
                         "\"KEYSTORE_ALIAS\" => \"${options.alias ?: "vault"}\", " +
                         "\"SALT\" => \"${options.salt ?: "12345678"}\", " +
                         "\"ITERATION_COUNT\" => \"${options.iteration ?: "50"}\", " +
-                        "\"ENC_FILE_DIR\" => \"${encDir}/\"})")
+                        "\"ENC_FILE_DIR\" => \"${encDir}\"})")
 
                 if (!addVault.success) {
                     throw new Exception("Failed to add vault for ${hostName}. ${addVault.response.toString()}")
