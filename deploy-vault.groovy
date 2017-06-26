@@ -97,7 +97,7 @@ def addVaultToHost = { host ->
 
             if (vaultExists.success) {
 
-                def properties = vaultExists.response.get("result").asPropertyList()
+                def properties = vaultExists.response.get("result").get("vault-options").asPropertyList()
 
                 if (properties.find {"KEYSTORE_URL".equals(it.name) && !${options.'keystore-file'}.equals(it.vaule)} ||
                         properties.find {"KEYSTORE_PASSWORD".equals(it.name) && !${options.'keystore-password'}.equals(it.vaule)} ||
