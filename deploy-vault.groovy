@@ -91,11 +91,12 @@ def addVaultToHost = { host ->
         Boolean doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to add vault ${hostName}.")
 
+            def updateRequired = false
 
             def vaultExists = jbossCli.cmd("${hostPrefix}/core-service=vault:read-resource")
 
             if (vaultExists.success) {
-                def updateRequired = false
+
                 def properties = vaultExists.response.get("result").asPropertyList()
 
                 if (properties.find {"KEYSTORE_URL".equals(it.name) && ${options.'keystore-file'}.equals(it.vaule)} ||
