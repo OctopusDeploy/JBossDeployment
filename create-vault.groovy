@@ -53,7 +53,7 @@ def vaultSession = new VaultSession(
         options.'enc-dir'.toString(),
         options.salt ?: "12345678",
         options.iteration ?: 50,
-        true)
+        !new File(options.'keystore-file').exists())
 vaultSession.startVaultSession(options.alias ?: "vault")
 
 csvRecords.forEach {
