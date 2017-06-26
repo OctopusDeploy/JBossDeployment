@@ -100,11 +100,11 @@ def addVaultToHost = { host ->
                 def properties = vaultExists.response.get("result").get("vault-options").asPropertyList()
 
                 def keystoreUrlChanged = properties.any {"KEYSTORE_URL" == it.name && options.'keystore-file' != it.value.asString()}
-                def keystorePasswordChanged =  properties.any {"KEYSTORE_PASSWORD" == it.name && options.'keystore-password' != it.vaule.asString()}
-                def keystoreAliasChanged = properties.any {"KEYSTORE_ALIAS" == it.name && options.alias ?: "vault" != it.vaule.asString()}
-                def keystoreSaltChanged = properties.any {"SALT" == it.name && (options.salt ?: "12345678") != it.vaule.asString()}
-                def keystoreIterationChanged = properties.any {"ITERATION_COUNT" == it.name && (options.iteration ?: "50") != it.vaule.asString()}
-                def encDirChanged = properties.any {"ENC_FILE_DIR" == it.name && options.'enc-dir' != it.vaule.asString()}
+                def keystorePasswordChanged = properties.any {"KEYSTORE_PASSWORD" == it.name && options.'keystore-password' != it.value.asString()}
+                def keystoreAliasChanged = properties.any {"KEYSTORE_ALIAS" == it.name && options.alias ?: "vault" != it.value.asString()}
+                def keystoreSaltChanged = properties.any {"SALT" == it.name && (options.salt ?: "12345678") != it.value.asString()}
+                def keystoreIterationChanged = properties.any {"ITERATION_COUNT" == it.name && (options.iteration ?: "50") != it.value.asString()}
+                def encDirChanged = properties.any {"ENC_FILE_DIR" == it.name && options.'enc-dir' != it.value.asString()}
 
                 if (keystoreUrlChanged ||
                         keystorePasswordChanged ||
