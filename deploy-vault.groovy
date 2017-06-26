@@ -91,14 +91,6 @@ def addVaultToHost = { host ->
         Boolean doWithRetry(RetryContext context) throws Exception {
             println("Attempt ${context.retryCount + 1} to add vault ${hostName}.")
 
-            /*
-                The folder needs to end with a path separator
-             */
-            def fixedEncDir = options.'enc-dir'
-            if (!fixedEncDir.endsWith(File.separator)) {
-                fixedEncDir += File.separator
-            }
-
             def updateRequired = false
 
             def vaultExists = jbossCli.cmd("${hostPrefix}/core-service=vault:read-resource")
@@ -112,7 +104,12 @@ def addVaultToHost = { host ->
                 def keystoreAliasChanged = properties.any {"KEYSTORE_ALIAS" == it.name && options.alias ?: "vault" != it.value.asString()}
                 def keystoreSaltChanged = properties.any {"SALT" == it.name && (options.salt ?: "12345678") != it.value.asString()}
                 def keystoreIterationChanged = properties.any {"ITERATION_COUNT" == it.name && (options.iteration ?: "50") != it.value.asString()}
-                def encDirChanged = properties.any {"ENC_FILE_DIR" == it.name && fixedEncDir != it.value.asString()}
+
+                /*
+                    Note that this value may not be returned as expected because of the
+                    bug at https://issues.jboss.org/browse/WFLY-8993
+                 */
+                def encDirChanged = properties.any {"ENC_FILE_DIR" == it.name && options.'enc-dir' != it.value.asString()}
 
                 if (keystoreUrlChanged ||
                         keystorePasswordChanged ||
@@ -137,7 +134,7 @@ def addVaultToHost = { host ->
                 def keystorePassword = options.'keystore-password'
                         .replaceAll('\\\\', '\\\\\\\\')
                         .replaceAll('"', '\\\\"')
-                def encDir = fixedEncDir
+                def encDir = options.'enc-dir'
                         .replaceAll('\\\\', '\\\\\\\\')
                         .replaceAll('"', '\\\\"')
 
