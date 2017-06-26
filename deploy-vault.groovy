@@ -99,12 +99,19 @@ def addVaultToHost = { host ->
 
                 def properties = vaultExists.response.get("result").get("vault-options").asPropertyList()
 
-                if (properties.any {"KEYSTORE_URL".equals(it.name) && !${options.'keystore-file'}.equals(it.vaule)} ||
-                        properties.any {"KEYSTORE_PASSWORD".equals(it.name) && !${options.'keystore-password'}.equals(it.vaule)} ||
-                        properties.any {"KEYSTORE_ALIAS".equals(it.name) && !${options.alias ?: "vault"}.equals(it.vaule)} ||
-                        properties.any {"SALT".equals(it.name) && !${options.salt ?: "12345678"}.equals(it.vaule)} ||
-                        properties.any {"ITERATION_COUNT".equals(it.name) && !${options.iteration ?: "50"}.equals(it.vaule)} ||
-                        properties.any {"ENC_FILE_DIR".equals(it.name) && !${options.'enc-dir'}.equals(it.vaule)}) {
+                def keystoreUrlChanged = properties.any {"KEYSTORE_URL".equals(it.name) && !${options.'keystore-file'}.equals(it.vaule)}
+                def keystorePasswordChanged =  properties.any {"KEYSTORE_PASSWORD".equals(it.name) && !${options.'keystore-password'}.equals(it.vaule)}
+                def keystoreAliasChanged = properties.any {"KEYSTORE_ALIAS".equals(it.name) && !${options.alias ?: "vault"}.equals(it.vaule)}
+                def keystoreSaltChanged = properties.any {"SALT".equals(it.name) && !${options.salt ?: "12345678"}.equals(it.vaule)}
+                def keystoreIterationChanged = properties.any {"ITERATION_COUNT".equals(it.name) && !${options.iteration ?: "50"}.equals(it.vaule)}
+                def encDirChanged = properties.any {"ENC_FILE_DIR".equals(it.name) && !${options.'enc-dir'}.equals(it.vaule)}
+
+                if (keystoreUrlChanged ||
+                        keystorePasswordChanged ||
+                        keystoreAliasChanged ||
+                        keystoreSaltChanged ||
+                        keystoreIterationChanged ||
+                        encDirChanged) {
                     updateRequired = true
                     def removeResult = jbossCli.cmd("${hostPrefix}/core-service=vault:remove")
                     if (!removeResult.success) {
