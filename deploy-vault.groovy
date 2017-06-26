@@ -42,6 +42,7 @@ cli.with {
     e longOpt: 'enc-dir', args: 1, argName: 'enc-dir', required: true, 'Directory containing encrypted files'
     v longOpt: 'alias', args: 1, argName: 'alias', 'Vault keystore alias'
     t longOpt: 'no-restart', 'Don\'t restart any hosts'
+    q longOpt: 'hosts', args: 1, argName: 'hosts', 'Hosts to add the SSL configuration to'
 }
 
 def options = cli.parse(args)
@@ -155,9 +156,24 @@ def getHosts = {
         it.get("result").get("name").asString()
     }
 
-    println "Found domain master host \"${hosts.first()}\""
+    println "Found domain hosts \"${hosts}\""
 
-    return hosts.first()
+    if (options.hosts) {
+        def suppliedHosts = ImmutableList.copyOf(Splitter.on(',')
+                .trimResults()
+                .omitEmptyStrings()
+                .split(options.hosts))
+
+        def invalid = CollectionUtils.subtract(suppliedHosts, hosts)
+
+        if (!invalid.empty) {
+            throw new Exception("The hosts ${invalid} did not match any hosts ${hosts} in the domain config")
+        }
+
+        return suppliedHosts
+    }
+
+    return hosts
 }
 
 retryTemplate.execute(new RetryCallback<Void, Exception>() {
