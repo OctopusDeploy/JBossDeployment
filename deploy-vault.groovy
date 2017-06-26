@@ -121,6 +121,9 @@ def addVaultToHost = { host ->
                 def keystorePassword = options.'keystore-password'
                         .replaceAll('\\\\', '\\\\\\\\')
                         .replaceAll('"', '\\\\"')
+                def encDir = options.'enc-dir'
+                        .replaceAll('\\\\', '\\\\\\\\')
+                        .replaceAll('"', '\\\\"')
 
                 def addVault = jbossCli.cmd("${hostPrefix}/core-service=vault:add(vault-options={" +
                         "\"KEYSTORE_URL\" => \"${keystoreFile}\", " +
@@ -128,7 +131,7 @@ def addVaultToHost = { host ->
                         "\"KEYSTORE_ALIAS\" => \"${options.alias ?: "vault"}\", " +
                         "\"SALT\" => \"${options.salt ?: "12345678"}\", " +
                         "\"ITERATION_COUNT\" => \"${options.iteration ?: "50"}\", " +
-                        "\"ENC_FILE_DIR\" => \"${options.'enc-dir'}/\"})")
+                        "\"ENC_FILE_DIR\" => \"${encDir}/\"})")
 
                 if (!addVault.success) {
                     throw new Exception("Failed to add vault for ${hostName}. ${addVault.response.toString()}")
