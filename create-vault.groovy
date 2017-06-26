@@ -70,3 +70,5 @@ csvRecords.forEach {
 
 println vaultSession.keystoreMaskedPassword
 
+System.exit(0)
+
